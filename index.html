@@ -1,113 +1,330 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#1824b8"
+    >
 
     <title>Smart Inventory</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 </head>
 
 <body>
 
-    <!-- =========================
-         LOGIN SCREEN
-    ========================== -->
 
-    <div id="loginScreen" class="login-screen">
+<!-- =====================================================
+     LOGIN SCREEN
+===================================================== -->
 
-        <div class="login-card">
+<section
+    id="loginScreen"
+    class="login-screen"
+>
 
-            <div class="app-logo">
-                SI
+    <div class="login-card">
+
+        <div class="login-logo">
+            SI
+        </div>
+
+        <h1>
+            Smart Inventory
+        </h1>
+
+        <p class="login-subtitle">
+            Manage • Track • Grow
+        </p>
+
+
+        <!-- MOBILE LOGIN -->
+
+        <div
+            id="mobileLogin"
+            class="login-step"
+        >
+
+            <label>
+                Mobile Number
+            </label>
+
+            <div class="mobile-input">
+
+                <span>
+                    +91
+                </span>
+
+                <input
+                    id="mobileNumber"
+                    type="tel"
+                    maxlength="10"
+                    placeholder="Enter mobile number"
+                >
+
             </div>
 
-            <h1>Smart Inventory</h1>
 
-            <p class="login-subtitle">
-                Smart inventory management system
+            <button
+                class="primary-btn full-btn"
+                onclick="sendOTP()"
+            >
+                Send OTP
+            </button>
+
+        </div>
+
+
+        <!-- OTP -->
+
+        <div
+            id="otpLogin"
+            class="login-step hidden"
+        >
+
+            <label>
+                Enter OTP
+            </label>
+
+            <input
+                id="otpInput"
+                type="text"
+                maxlength="6"
+                placeholder="6 digit OTP"
+            >
+
+
+            <button
+                class="primary-btn full-btn"
+                onclick="verifyOTP()"
+            >
+                Verify OTP
+            </button>
+
+
+            <button
+                class="text-btn"
+                onclick="backToMobile()"
+            >
+                ← Change mobile number
+            </button>
+
+        </div>
+
+
+        <!-- GMAIL -->
+
+        <div
+            id="gmailLogin"
+            class="login-step hidden"
+        >
+
+            <label>
+                Gmail Address
+            </label>
+
+            <input
+                id="gmailInput"
+                type="email"
+                placeholder="example@gmail.com"
+            >
+
+
+            <button
+                class="primary-btn full-btn"
+                onclick="loginWithGmail()"
+            >
+                Continue with Gmail
+            </button>
+
+        </div>
+
+
+        <p class="login-note">
+            Your inventory data stays saved with your account.
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     MAIN APPLICATION
+===================================================== -->
+
+<div
+    id="app"
+    class="app hidden"
+>
+
+
+<!-- =====================================================
+     TOP HEADER
+===================================================== -->
+
+<header class="top-header">
+
+    <div class="brand-area">
+
+        <div class="brand-logo">
+            SI
+        </div>
+
+        <div>
+
+            <h2>
+                Smart Inventory
+            </h2>
+
+            <small id="userInfo">
+                Inventory Management
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="profile-btn"
+        onclick="openProfile()"
+        title="Profile"
+    >
+        👤
+    </button>
+
+</header>
+
+
+
+<!-- =====================================================
+     MAIN CONTENT
+===================================================== -->
+
+<main class="main-content">
+
+
+<!-- =====================================================
+     HOME PAGE
+===================================================== -->
+
+<section
+    id="homePage"
+    class="page active"
+>
+
+    <div class="page-heading">
+
+        <div>
+
+            <h1>
+                Dashboard
+            </h1>
+
+            <p>
+                Welcome to Smart Inventory
             </p>
 
+        </div>
 
-            <!-- MOBILE LOGIN -->
+    </div>
 
-            <div id="mobileLogin">
 
-                <label>Mobile Number</label>
+    <!-- STAT CARDS -->
 
-                <div class="phone-input">
-                    <span>+91</span>
-                    <input
-                        id="mobileNumber"
-                        type="tel"
-                        maxlength="10"
-                        placeholder="Enter mobile number"
-                    >
-                </div>
+    <div class="stats-grid">
 
-                <button
-                    class="main-btn"
-                    onclick="sendOTP()"
-                >
-                    Send OTP
-                </button>
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                📦
+            </div>
+
+            <div>
+
+                <span>
+                    Total Products
+                </span>
+
+                <strong id="totalProducts">
+                    0
+                </strong>
 
             </div>
 
+        </div>
 
-            <!-- OTP -->
 
-            <div id="otpLogin" class="hidden">
+        <div class="stat-card">
 
-                <label>Enter OTP</label>
+            <div class="stat-icon">
+                📊
+            </div>
 
-                <input
-                    id="otpInput"
-                    type="number"
-                    placeholder="Enter OTP"
-                >
+            <div>
 
-                <button
-                    class="main-btn"
-                    onclick="verifyOTP()"
-                >
-                    Verify OTP
-                </button>
+                <span>
+                    Total Stock
+                </span>
 
-                <button
-                    class="text-btn"
-                    onclick="backToMobile()"
-                >
-                    Change mobile number
-                </button>
+                <strong id="totalStock">
+                    0
+                </strong>
 
             </div>
 
+        </div>
 
-            <!-- GMAIL -->
 
-            <div id="gmailLogin" class="hidden">
+        <div class="stat-card warning-card">
 
-                <div class="verified-box">
-                    ✓ Mobile number verified
-                </div>
+            <div class="stat-icon">
+                ⚠️
+            </div>
 
-                <label>Gmail Address</label>
+            <div>
 
-                <input
-                    id="gmailInput"
-                    type="email"
-                    placeholder="yourname@gmail.com"
-                >
+                <span>
+                    Low Stock
+                </span>
 
-                <button
-                    class="main-btn"
-                    onclick="loginWithGmail()"
-                >
-                    Continue
-                </button>
+                <strong id="lowStock">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                💰
+            </div>
+
+            <div>
+
+                <span>
+                    Today's Sale
+                </span>
+
+                <strong id="todaySale">
+                    ₹0
+                </strong>
 
             </div>
 
@@ -117,1090 +334,1282 @@
 
 
 
-    <!-- =========================
-         MAIN APPLICATION
-    ========================== -->
+    <!-- QUICK ACTIONS -->
 
-    <div id="app" class="app hidden">
+    <h2 class="section-title">
+        Quick Actions
+    </h2>
 
 
-        <!-- TOP HEADER -->
+    <div class="quick-grid">
 
-        <header class="top-header">
 
-            <div class="brand-area">
+        <button
+            class="action-card"
+            onclick="openPage('addProductPage')"
+        >
 
-                <div class="header-logo">
-                    SI
-                </div>
+            <div class="action-icon">
+                ＋
+            </div>
+
+            <div>
+
+                <strong>
+                    Normal Add
+                </strong>
+
+                <span>
+                    Add product manually
+                </span>
+
+            </div>
+
+        </button>
+
+
+        <button
+            class="action-card"
+            onclick="openPage('bulkAddPage')"
+        >
+
+            <div class="action-icon">
+                📥
+            </div>
+
+            <div>
+
+                <strong>
+                    Bulk Product Add
+                </strong>
+
+                <span>
+                    Add products in bulk
+                </span>
+
+            </div>
+
+        </button>
+
+
+        <button
+            class="action-card"
+            onclick="openPage('inventoryPage')"
+        >
+
+            <div class="action-icon">
+                📦
+            </div>
+
+            <div>
+
+                <strong>
+                    Inventory
+                </strong>
+
+                <span>
+                    View all products
+                </span>
+
+            </div>
+
+        </button>
+
+
+        <button
+            class="action-card"
+            onclick="openPage('billPage')"
+        >
+
+            <div class="action-icon">
+                🧾
+            </div>
+
+            <div>
+
+                <strong>
+                    Create Parcha
+                </strong>
+
+                <span>
+                    Create customer bill
+                </span>
+
+            </div>
+
+        </button>
+
+
+        <button
+            class="action-card"
+            onclick="openPage('aiSetMakerPage')"
+        >
+
+            <div class="action-icon">
+                ✨
+            </div>
+
+            <div>
+
+                <strong>
+                    AI Set Maker
+                </strong>
+
+                <span>
+                    Match saree with inventory
+                </span>
+
+            </div>
+
+        </button>
+
+
+        <button
+            class="action-card"
+            onclick="openPage('lowStockPage')"
+        >
+
+            <div class="action-icon">
+                ⚠️
+            </div>
+
+            <div>
+
+                <strong>
+                    Low Stock Alerts
+                </strong>
+
+                <span>
+                    Check products running low
+                </span>
+
+            </div>
+
+        </button>
+
+    </div>
+
+
+    <!-- LOW STOCK PREVIEW -->
+
+    <div class="section-header">
+
+        <h2>
+            Low Stock Alerts
+        </h2>
+
+        <button
+            class="link-btn"
+            onclick="openPage('lowStockPage')"
+        >
+            View All
+        </button>
+
+    </div>
+
+
+    <div
+        id="homeLowStock"
+        class="home-list"
+    >
+
+        <div class="empty-state">
+            <div>📦</div>
+
+            <h3>
+                No low-stock products
+            </h3>
+
+            <p>
+                Everything looks good.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     NORMAL ADD PAGE
+===================================================== -->
+
+<section
+    id="addProductPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('homePage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h1>
+                Normal Add
+            </h1>
+
+            <p>
+                Add a product manually
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="form-card">
+
+        <form id="productForm">
+
+
+            <h3>
+                Product Details
+            </h3>
+
+
+            <label>
+                Product Name *
+            </label>
+
+            <input
+                id="productName"
+                required
+                placeholder="e.g. Wireless Mouse"
+            >
+
+
+            <label>
+                SKU *
+            </label>
+
+            <input
+                id="productSKU"
+                required
+                placeholder="e.g. WM-001"
+            >
+
+
+            <label>
+                Section / Category
+            </label>
+
+            <input
+                id="productCategory"
+                placeholder="e.g. Electronics"
+            >
+
+
+            <div class="two-column">
 
                 <div>
-                    <h2>Smart Inventory</h2>
-                    <span id="userInfo">
-                        Inventory Management
-                    </span>
+
+                    <label>
+                        Colour
+                    </label>
+
+                    <input
+                        id="productColour"
+                        placeholder="Black"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Size / Variant
+                    </label>
+
+                    <input
+                        id="productSize"
+                        placeholder="Standard"
+                    >
+
                 </div>
 
             </div>
 
 
-            <button
-                class="profile-btn"
-                onclick="openProfile()"
-            >
-                👤
-            </button>
+            <div class="two-column">
 
-        </header>
+                <div>
 
-
-
-        <!-- MAIN CONTENT -->
-
-        <main class="main-content">
-
-
-            <!-- =========================
-                 HOME
-            ========================== -->
-
-            <section
-                id="homePage"
-                class="page active"
-            >
-
-                <div class="page-heading">
-
-                    <div>
-                        <h1>Dashboard</h1>
-
-                        <p>
-                            Welcome to Smart Inventory
-                        </p>
-                    </div>
-
-                </div>
-
-
-                <!-- STAT CARDS -->
-
-                <div class="stats-grid">
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon">
-                            📦
-                        </div>
-
-                        <div>
-                            <span>Total Products</span>
-                            <strong id="totalProducts">
-                                0
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon">
-                            📊
-                        </div>
-
-                        <div>
-                            <span>Total Stock</span>
-                            <strong id="totalStock">
-                                0
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon">
-                            ⚠️
-                        </div>
-
-                        <div>
-                            <span>Low Stock</span>
-                            <strong id="lowStock">
-                                0
-                            </strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-icon">
-                            💰
-                        </div>
-
-                        <div>
-                            <span>Today's Sale</span>
-                            <strong id="todaySale">
-                                ₹0
-                            </strong>
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- QUICK ACTIONS -->
-
-                <div class="section-heading">
-
-                    <h2>Quick Actions</h2>
-
-                </div>
-
-
-                <div class="quick-grid">
-
-
-                    <button
-                        class="quick-card"
-                        onclick="openPage('addProductPage')"
-                    >
-
-                        <div class="quick-icon">
-                            ➕
-                        </div>
-
-                        <div>
-                            <h3>Add Product</h3>
-
-                            <p>
-                                Add product manually
-                            </p>
-                        </div>
-
-                    </button>
-
-
-                    <button
-                        class="quick-card"
-                        onclick="openPage('bulkPage')"
-                    >
-
-                        <div class="quick-icon">
-                            📥
-                        </div>
-
-                        <div>
-                            <h3>Bulk Product Add</h3>
-
-                            <p>
-                                Import multiple products
-                            </p>
-                        </div>
-
-                    </button>
-
-
-                    <button
-                        class="quick-card"
-                        onclick="openPage('inventoryPage')"
-                    >
-
-                        <div class="quick-icon">
-                            📦
-                        </div>
-
-                        <div>
-                            <h3>Inventory</h3>
-
-                            <p>
-                                View all products
-                            </p>
-                        </div>
-
-                    </button>
-
-
-                    <button
-                        class="quick-card"
-                        onclick="openPage('billPage')"
-                    >
-
-                        <div class="quick-icon">
-                            🧾
-                        </div>
-
-                        <div>
-                            <h3>Create Parcha</h3>
-
-                            <p>
-                                Create customer bill
-                            </p>
-                        </div>
-
-                    </button>
-
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 INVENTORY
-            ========================== -->
-
-            <section
-                id="inventoryPage"
-                class="page"
-            >
-
-                <div class="page-heading">
-
-                    <div>
-                        <h1>Inventory</h1>
-
-                        <p>
-                            Manage your complete stock
-                        </p>
-                    </div>
-
-                    <button
-                        class="small-main-btn"
-                        onclick="openPage('addProductPage')"
-                    >
-                        + Add Product
-                    </button>
-
-                </div>
-
-
-                <div class="search-box">
-
-                    <span>🔍</span>
+                    <label>
+                        Quantity
+                    </label>
 
                     <input
-                        id="inventorySearch"
-                        type="text"
-                        placeholder="Search product, SKU, colour..."
-                        oninput="searchInventory()"
+                        id="productQuantity"
+                        type="number"
+                        min="0"
+                        value="0"
                     >
 
                 </div>
 
 
-                <div id="inventoryList">
-
-                    <div class="empty-state">
-
-                        <div>📦</div>
-
-                        <h3>No products yet</h3>
-
-                        <p>
-                            Add your first product to inventory.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 ADD PRODUCT
-            ========================== -->
-
-            <section
-                id="addProductPage"
-                class="page"
-            >
-
-                <div class="page-heading">
-
-                    <div>
-
-                        <button
-                            class="back-btn"
-                            onclick="openPage('homePage')"
-                        >
-                            ← Back
-                        </button>
-
-                        <h1>Product Add</h1>
-
-                        <p>
-                            Add product to inventory
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="add-options">
-
-
-                    <button
-                        class="large-option"
-                        onclick="openPage('normalAddPage')"
-                    >
-
-                        <div class="large-option-icon">
-                            ➕
-                        </div>
-
-                        <div>
-
-                            <h2>Normal Add</h2>
-
-                            <p>
-                                Manually enter complete
-                                product information.
-                            </p>
-
-                        </div>
-
-                    </button>
-
-
-                    <button
-                        class="large-option"
-                        onclick="openPage('bulkPage')"
-                    >
-
-                        <div class="large-option-icon">
-                            📥
-                        </div>
-
-                        <div>
-
-                            <h2>Bulk Product Add</h2>
-
-                            <p>
-                                Add multiple products using
-                                AI import or SKU scanning.
-                            </p>
-
-                        </div>
-
-                    </button>
-
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 NORMAL ADD
-            ========================== -->
-
-            <section
-                id="normalAddPage"
-                class="page"
-            >
-
-                <button
-                    class="back-btn"
-                    onclick="openPage('addProductPage')"
-                >
-                    ← Back
-                </button>
-
-                <h1>Normal Product Add</h1>
-
-                <p class="page-description">
-                    Enter product information manually.
-                </p>
-
-
-                <form
-                    id="productForm"
-                    class="form-card"
-                >
-
-
-                    <div class="form-section">
-
-                        <h3>Basic Information</h3>
-
-
-                        <div class="form-grid">
-
-                            <div class="input-group">
-
-                                <label>Product Name</label>
-
-                                <input
-                                    id="productName"
-                                    required
-                                    placeholder="Example: Velvet Bangle"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>SKU Code</label>
-
-                                <input
-                                    id="productSKU"
-                                    required
-                                    placeholder="Example: VB-RED-24"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>Category</label>
-
-                                <input
-                                    id="productCategory"
-                                    placeholder="Example: Bangles"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>Colour</label>
-
-                                <input
-                                    id="productColour"
-                                    placeholder="Example: Maroon"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>Size</label>
-
-                                <input
-                                    id="productSize"
-                                    placeholder="Example: 2.4"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>Quantity</label>
-
-                                <input
-                                    id="productQuantity"
-                                    type="number"
-                                    min="0"
-                                    value="0"
-                                >
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <div class="form-section">
-
-                        <h3>Pricing</h3>
-
-
-                        <div class="form-grid">
-
-                            <div class="input-group">
-
-                                <label>Purchase Price</label>
-
-                                <input
-                                    id="purchasePrice"
-                                    type="number"
-                                    min="0"
-                                    placeholder="₹"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>Selling Price</label>
-
-                                <input
-                                    id="sellingPrice"
-                                    type="number"
-                                    min="0"
-                                    placeholder="₹"
-                                >
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="submit"
-                        class="main-btn"
-                    >
-                        Add Product to Inventory
-                    </button>
-
-
-                </form>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 BULK PRODUCT ADD
-            ========================== -->
-
-            <section
-                id="bulkPage"
-                class="page"
-            >
-
-                <button
-                    class="back-btn"
-                    onclick="openPage('addProductPage')"
-                >
-                    ← Back
-                </button>
-
-                <h1>Bulk Product Add</h1>
-
-                <p class="page-description">
-                    Choose how you want to add multiple products.
-                </p>
-
-
-                <div class="bulk-grid">
-
-
-                    <button
-                        class="bulk-card"
-                        onclick="openPage('aiImportPage')"
-                    >
-
-                        <div class="bulk-icon">
-                            🤖
-                        </div>
-
-                        <h2>Image / File Import</h2>
-
-                        <p>
-                            AI reads product information
-                            from image or file.
-                        </p>
-
-                        <span>
-                            Import with AI →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="bulk-card"
-                        onclick="openPage('scanPage')"
-                    >
-
-                        <div class="bulk-icon">
-                            📷
-                        </div>
-
-                        <h2>Scan Add</h2>
-
-                        <p>
-                            Scan QR codes generated
-                            from product SKUs.
-                        </p>
-
-                        <span>
-                            Open Scanner →
-                        </span>
-
-                    </button>
-
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 AI IMPORT
-            ========================== -->
-
-            <section
-                id="aiImportPage"
-                class="page"
-            >
-
-                <button
-                    class="back-btn"
-                    onclick="openPage('bulkPage')"
-                >
-                    ← Back
-                </button>
-
-                <h1>AI Image / File Import</h1>
-
-                <p class="page-description">
-                    Upload product data for AI processing.
-                </p>
-
-
-                <div class="upload-card">
-
-                    <div class="upload-icon">
-                        🤖
-                    </div>
-
-                    <h2>Upload Product File</h2>
-
-                    <p>
-                        AI will read the available product
-                        information and identify missing details.
-                    </p>
-
+                <div>
+
+                    <label>
+                        Purchase Price (₹)
+                    </label>
 
                     <input
-                        id="aiFile"
-                        type="file"
-                        accept="image/*,.csv,.xlsx,.xls"
+                        id="purchasePrice"
+                        type="number"
+                        min="0"
+                        value="0"
                     >
-
-
-                    <button
-                        class="main-btn"
-                        onclick="processAIFile()"
-                    >
-                        Process with AI
-                    </button>
 
                 </div>
 
-
-                <div id="aiResults"></div>
-
-
-            </section>
+            </div>
 
 
+            <label>
+                Selling Price (₹)
+            </label>
 
-            <!-- =========================
-                 SCAN
-            ========================== -->
-
-            <section
-                id="scanPage"
-                class="page"
+            <input
+                id="sellingPrice"
+                type="number"
+                min="0"
+                value="0"
             >
 
-                <button
-                    class="back-btn"
-                    onclick="openPage('bulkPage')"
-                >
-                    ← Back
-                </button>
 
-                <h1>Scan Add</h1>
-
-                <p class="page-description">
-                    Scan SKU QR codes to add products.
-                </p>
-
-
-                <div class="scanner-card">
-
-                    <div class="scanner-frame">
-
-                        <div class="scanner-line"></div>
-
-                        <span>
-                            QR Scanner
-                        </span>
-
-                    </div>
-
-
-                    <button
-                        class="main-btn"
-                        onclick="startScanner()"
-                    >
-                        Start Camera Scanner
-                    </button>
-
-                </div>
-
-
-                <div id="scanResults"></div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 AI SET MAKER
-            ========================== -->
-
-            <section
-                id="aiSetMakerPage"
-                class="page"
-            >
-
-                <div class="page-heading">
-
-                    <div>
-
-                        <h1>AI Set Maker</h1>
-
-                        <p>
-                            Find the closest matching inventory
-                            colour and create your set.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="set-maker-card">
-
-                    <div class="set-maker-icon">
-                        🤖
-                    </div>
-
-                    <h2>Scan Saree</h2>
-
-                    <p>
-                        Upload or capture a saree image.
-                        AI will detect its colour and find
-                        the closest available inventory options.
-                    </p>
-
-
-                    <input
-                        id="sareeImage"
-                        type="file"
-                        accept="image/*"
-                    >
-
-
-                    <button
-                        class="main-btn"
-                        onclick="analyzeSaree()"
-                    >
-                        Analyze Saree
-                    </button>
-
-                </div>
-
-
-                <div id="setMakerResults"></div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 BILL / PARCHA
-            ========================== -->
-
-            <section
-                id="billPage"
-                class="page"
-            >
-
-                <div class="page-heading">
-
-                    <div>
-
-                        <h1>Parcha / Bill</h1>
-
-                        <p>
-                            Create customer sale bill
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="bill-layout">
-
-
-                    <div class="form-card">
-
-                        <h3>Customer</h3>
-
-                        <div class="input-group">
-
-                            <label>
-                                Customer Name
-                            </label>
-
-                            <input
-                                id="customerName"
-                                placeholder="Customer name"
-                            >
-
-                        </div>
-
-
-                        <h3 class="form-title">
-                            Add Product
-                        </h3>
-
-
-                        <div class="input-group">
-
-                            <label>
-                                Product
-                            </label>
-
-                            <select id="billProduct">
-                                <option>
-                                    No products available
-                                </option>
-                            </select>
-
-                        </div>
-
-
-                        <div class="form-grid">
-
-                            <div class="input-group">
-
-                                <label>
-                                    Quantity
-                                </label>
-
-                                <input
-                                    id="billQuantity"
-                                    type="number"
-                                    min="1"
-                                    value="1"
-                                >
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Discount
-                                </label>
-
-                                <input
-                                    id="billDiscount"
-                                    type="number"
-                                    min="0"
-                                    value="0"
-                                >
-
-                            </div>
-
-                        </div>
-
-
-                        <button
-                            class="main-btn"
-                            onclick="createBill()"
-                        >
-                            Create Bill
-                        </button>
-
-
-                    </div>
-
-
-                    <div id="billPreview">
-
-                        <div class="empty-state">
-
-                            <div>🧾</div>
-
-                            <h3>
-                                Bill Preview
-                            </h3>
-
-                            <p>
-                                Your bill will appear here.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =========================
-                 MORE
-            ========================== -->
-
-            <section
-                id="morePage"
-                class="page"
-            >
-
-                <h1>More</h1>
-
-                <p class="page-description">
-                    App settings and account options.
-                </p>
-
-
-                <div class="more-list">
-
-
-                    <button
-                        onclick="openProfile()"
-                    >
-                        👤
-                        <span>Profile</span>
-                        <b>›</b>
-                    </button>
-
-
-                    <button
-                        onclick="alert('Settings will be added in the next module.')"
-                    >
-                        ⚙️
-                        <span>Settings</span>
-                        <b>›</b>
-                    </button>
-
-
-                    <button
-                        onclick="logout()"
-                    >
-                        🚪
-                        <span>Logout</span>
-                        <b>›</b>
-                    </button>
-
-
-                </div>
-
-
-            </section>
-
-
-        </main>
-
-
-
-        <!-- =========================
-             BOTTOM NAVIGATION
-        ========================== -->
-
-        <nav class="bottom-nav">
+            <label>
+                Notes
+            </label>
+
+            <textarea
+                id="productNotes"
+                rows="3"
+                placeholder="Optional notes"
+            ></textarea>
 
 
             <button
-                class="nav-item active"
-                onclick="openPage('homePage', this)"
+                type="submit"
+                class="primary-btn full-btn"
             >
-
-                <span>🏠</span>
-
-                <small>Home</small>
-
+                ✓ Save Product
             </button>
 
+        </form>
 
-            <button
-                class="nav-item"
-                onclick="openPage('inventoryPage', this)"
-            >
+    </div>
 
-                <span>📦</span>
-
-                <small>Inventory</small>
-
-            </button>
+</section>
 
 
-            <button
-                class="nav-item ai-nav"
-                onclick="openPage('aiSetMakerPage', this)"
-            >
 
-                <span>🤖</span>
+<!-- =====================================================
+     BULK ADD MAIN
+===================================================== -->
 
-                <small>AI Set Maker</small>
+<section
+    id="bulkAddPage"
+    class="page"
+>
 
-            </button>
+    <div class="page-heading">
 
+        <button
+            class="back-btn"
+            onclick="openPage('homePage')"
+        >
+            ←
+        </button>
 
-            <button
-                class="nav-item"
-                onclick="openPage('billPage', this)"
-            >
+        <div>
 
-                <span>🧾</span>
+            <h1>
+                Bulk Product Add
+            </h1>
 
-                <small>Parcha</small>
+            <p>
+                Choose your preferred method
+            </p>
 
-            </button>
-
-
-            <button
-                class="nav-item"
-                onclick="openPage('morePage', this)"
-            >
-
-                <span>☰</span>
-
-                <small>More</small>
-
-            </button>
-
-
-        </nav>
-
+        </div>
 
     </div>
 
 
-    <!-- APP JAVASCRIPT -->
+    <div class="bulk-options">
 
-    <script src="app.js"></script>
+
+        <button
+            class="bulk-option"
+            onclick="openPage('aiImportPage')"
+        >
+
+            <div class="big-option-icon">
+                🖼️
+            </div>
+
+            <h2>
+                Image / File Import + AI
+            </h2>
+
+            <p>
+                Import image or file. AI will read
+                product information and prepare
+                inventory records.
+            </p>
+
+            <span>
+                →
+            </span>
+
+        </button>
+
+
+        <button
+            class="bulk-option"
+            onclick="openPage('scanPage')"
+        >
+
+            <div class="big-option-icon">
+                📷
+            </div>
+
+            <h2>
+                Scan Add
+            </h2>
+
+            <p>
+                Scan SKU / QR codes and add
+                products in bulk.
+            </p>
+
+            <span>
+                →
+            </span>
+
+        </button>
+
+    </div>
+
+
+    <div class="info-card">
+
+        <h3>
+            How it works
+        </h3>
+
+        <p>
+            ① Choose your preferred method
+        </p>
+
+        <p>
+            ② Import or scan products
+        </p>
+
+        <p>
+            ③ Review the records
+        </p>
+
+        <p>
+            ④ Confirm and add to inventory
+        </p>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     AI IMPORT PAGE
+===================================================== -->
+
+<section
+    id="aiImportPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('bulkAddPage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h1>
+                Image / File Import + AI
+            </h1>
+
+            <p>
+                Let AI read your product data
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="upload-card">
+
+        <div class="upload-icon">
+            ☁️
+        </div>
+
+        <h2>
+            Upload Product File
+        </h2>
+
+        <p>
+            Image, PDF, CSV or Excel
+        </p>
+
+
+        <input
+            id="aiFile"
+            type="file"
+            accept="image/*,.pdf,.csv,.xlsx,.xls"
+            hidden
+        >
+
+
+        <label
+            for="aiFile"
+            class="primary-btn"
+        >
+            Choose File
+        </label>
+
+    </div>
+
+
+    <div
+        id="aiResults"
+        class="results-area"
+    ></div>
+
+</section>
+
+
+
+<!-- =====================================================
+     SCAN ADD PAGE
+===================================================== -->
+
+<section
+    id="scanPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('bulkAddPage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h1>
+                Scan Add
+            </h1>
+
+            <p>
+                Scan SKU / QR codes
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="scanner-box">
+
+        <div class="scanner-frame">
+
+            <span></span>
+
+            <div>
+                📷
+            </div>
+
+        </div>
+
+
+        <h3>
+            Ready to Scan
+        </h3>
+
+        <p>
+            Align the QR / SKU code inside
+            the frame.
+        </p>
+
+
+        <button
+            class="primary-btn"
+            onclick="startScanner()"
+        >
+            Start Scanner
+        </button>
+
+    </div>
+
+
+    <div
+        id="scanResults"
+        class="results-area"
+    ></div>
+
+</section>
+
+
+
+<!-- =====================================================
+     INVENTORY PAGE
+===================================================== -->
+
+<section
+    id="inventoryPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <div>
+
+            <h1>
+                Inventory
+            </h1>
+
+            <p>
+                Manage all products
+            </p>
+
+        </div>
+
+        <button
+            class="primary-btn"
+            onclick="openPage('addProductPage')"
+        >
+            + Add
+        </button>
+
+    </div>
+
+
+    <div class="search-box">
+
+        <span>
+            🔎
+        </span>
+
+        <input
+            id="inventorySearch"
+            oninput="searchInventory()"
+            placeholder="Search name, SKU, colour..."
+        >
+
+    </div>
+
+
+    <div class="filter-row">
+
+        <button class="filter-btn active">
+            All
+        </button>
+
+        <button class="filter-btn">
+            Low Stock
+        </button>
+
+        <button class="filter-btn">
+            Out of Stock
+        </button>
+
+    </div>
+
+
+    <div
+        id="inventoryList"
+        class="inventory-list"
+    ></div>
+
+</section>
+
+
+
+<!-- =====================================================
+     AI SET MAKER
+===================================================== -->
+
+<section
+    id="aiSetMakerPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('homePage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h1>
+                AI Set Maker
+            </h1>
+
+            <p>
+                Find the closest inventory match
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="ai-hero">
+
+        <div class="ai-symbol">
+            ✨
+        </div>
+
+        <h2>
+            Smart Saree Matching
+        </h2>
+
+        <p>
+            Upload a saree image. The AI will
+            detect its colour and match it with
+            available inventory.
+        </p>
+
+    </div>
+
+
+    <div class="upload-card">
+
+        <div class="upload-icon">
+            👗
+        </div>
+
+        <h3>
+            Upload Saree Image
+        </h3>
+
+        <p>
+            JPG, PNG or WEBP
+        </p>
+
+
+        <input
+            id="sareeImage"
+            type="file"
+            accept="image/*"
+            hidden
+        >
+
+
+        <label
+            for="sareeImage"
+            class="primary-btn"
+        >
+            Choose Saree Image
+        </label>
+
+    </div>
+
+
+    <div class="design-selection">
+
+        <h3>
+            Select Designs
+        </h3>
+
+
+        <div class="design-grid">
+
+            <button
+                class="design-card selected"
+            >
+                Design 1
+            </button>
+
+            <button
+                class="design-card"
+            >
+                Design 2
+            </button>
+
+            <button
+                class="design-card"
+            >
+                Design 3
+            </button>
+
+            <button
+                class="design-card"
+            >
+                Design 4
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="primary-btn full-btn"
+        onclick="analyzeSaree()"
+    >
+        ✨ Find Matching Inventory
+    </button>
+
+
+    <div
+        id="setMakerResults"
+        class="results-area"
+    ></div>
+
+</section>
+
+
+
+<!-- =====================================================
+     BILL PAGE
+===================================================== -->
+
+<section
+    id="billPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <div>
+
+            <h1>
+                Parcha / Bill
+            </h1>
+
+            <p>
+                Create customer sale bill
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="form-card">
+
+
+        <label>
+            Customer Name
+        </label>
+
+        <input
+            id="customerName"
+            placeholder="Walk-in Customer"
+        >
+
+
+        <label>
+            Select Product
+        </label>
+
+        <select id="billProduct">
+
+            <option value="">
+                Select product
+            </option>
+
+        </select>
+
+
+        <label>
+            Quantity
+        </label>
+
+        <input
+            id="billQuantity"
+            type="number"
+            min="1"
+            value="1"
+        >
+
+
+        <label>
+            Discount (₹)
+        </label>
+
+        <input
+            id="billDiscount"
+            type="number"
+            min="0"
+            value="0"
+        >
+
+
+        <button
+            class="primary-btn full-btn"
+            onclick="createBill()"
+        >
+            🧾 Create Bill
+        </button>
+
+    </div>
+
+
+    <div
+        id="billPreview"
+        class="results-area"
+    ></div>
+
+</section>
+
+
+
+<!-- =====================================================
+     LOW STOCK PAGE
+===================================================== -->
+
+<section
+    id="lowStockPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('homePage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <h1>
+                Low Stock Alerts
+            </h1>
+
+            <p>
+                Products that need attention
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="lowStockList"
+        class="inventory-list"
+    >
+
+        <div class="empty-state">
+
+            <div>
+                ✅
+            </div>
+
+            <h3>
+                No low-stock products
+            </h3>
+
+            <p>
+                Your inventory is healthy.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     MORE PAGE
+===================================================== -->
+
+<section
+    id="morePage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <div>
+
+            <h1>
+                More
+            </h1>
+
+            <p>
+                Settings and account
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-list">
+
+
+        <button
+            class="setting-item"
+            onclick="openProfile()"
+        >
+
+            <span>
+                👤
+            </span>
+
+            <div>
+
+                <strong>
+                    My Account
+                </strong>
+
+                <small>
+                    Mobile & Gmail
+                </small>
+
+            </div>
+
+            <b>
+                →
+            </b>
+
+        </button>
+
+
+        <button
+            class="setting-item"
+        >
+
+            <span>
+                ⚙️
+            </span>
+
+            <div>
+
+                <strong>
+                    App Settings
+                </strong>
+
+                <small>
+                    Manage application settings
+                </small>
+
+            </div>
+
+            <b>
+                →
+            </b>
+
+        </button>
+
+
+        <button
+            class="setting-item"
+        >
+
+            <span>
+                🔔
+            </span>
+
+            <div>
+
+                <strong>
+                    Notifications
+                </strong>
+
+                <small>
+                    Stock alerts and updates
+                </small>
+
+            </div>
+
+            <b>
+                →
+            </b>
+
+        </button>
+
+
+        <button
+            class="setting-item logout-item"
+            onclick="logout()"
+        >
+
+            <span>
+                🚪
+            </span>
+
+            <div>
+
+                <strong>
+                    Logout
+                </strong>
+
+                <small>
+                    Sign out of Smart Inventory
+                </small>
+
+            </div>
+
+            <b>
+                →
+            </b>
+
+        </button>
+
+    </div>
+
+
+    <div class="app-brand-card">
+
+        <div class="brand-logo large">
+            SI
+        </div>
+
+        <h2>
+            Smart Inventory
+        </h2>
+
+        <p>
+            Manage Smarter. Grow Faster.
+        </p>
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+
+<!-- =====================================================
+     BOTTOM NAVIGATION
+===================================================== -->
+
+<nav class="bottom-nav">
+
+
+    <button
+        class="nav-item active"
+        onclick="openPage('homePage', this)"
+    >
+
+        <span>
+            🏠
+        </span>
+
+        <small>
+            Home
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        onclick="openPage('inventoryPage', this)"
+    >
+
+        <span>
+            📦
+        </span>
+
+        <small>
+            Inventory
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        onclick="openPage('aiSetMakerPage', this)"
+    >
+
+        <span>
+            ✨
+        </span>
+
+        <small>
+            AI Set Maker
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        onclick="openPage('billPage', this)"
+    >
+
+        <span>
+            🧾
+        </span>
+
+        <small>
+            Parcha
+        </small>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        onclick="openPage('morePage', this)"
+    >
+
+        <span>
+            ☰
+        </span>
+
+        <small>
+            More
+        </small>
+
+    </button>
+
+</nav>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script src="app.js"></script>
 
 </body>
 </html>
