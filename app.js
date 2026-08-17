@@ -1,12 +1,10 @@
 /* =========================================================
-   SMART INVENTORY — APP.JS
-   Working frontend logic
-========================================================= */
+   SMART INVENTORY — FINAL APP.JS
+   ========================================================= */
 
-
-/* =========================================================
+/* =========================
    DATA
-========================================================= */
+========================= */
 
 let inventory = JSON.parse(
     localStorage.getItem("smartInventoryProducts") || "[]"
@@ -21,11 +19,14 @@ let currentUser = JSON.parse(
 );
 
 let temporaryOTP = null;
+let selectedDesigns = [0];
+
+const LOW_STOCK_LIMIT = 5;
 
 
-/* =========================================================
-   INITIALIZATION
-========================================================= */
+/* =========================
+   START APP
+========================= */
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -35,70 +36,80 @@ document.addEventListener("DOMContentLoaded", () => {
         showLogin();
     }
 
+    const form = document.getElementById("productForm");
+
+    if (form) {
+        form.addEventListener("submit", addProduct);
+    }
+
+    const aiFile = document.getElementById("aiFile");
+
+    if (aiFile) {
+        aiFile.addEventListener("change", handleAIFile);
+    }
+
+    const sareeImage = document.getElementById("sareeImage");
+
+    if (sareeImage) {
+        sareeImage.addEventListener("change", handleSareeImage);
+    }
+
+    setupDesignButtons();
+
     updateDashboard();
     renderInventory();
     updateBillProducts();
-
-    const productForm = document.getElementById("productForm");
-
-    if (productForm) {
-        productForm.addEventListener("submit", addProduct);
-    }
+    renderLowStock();
 });
 
 
-/* =========================================================
+/* =========================
    LOGIN
-========================================================= */
+========================= */
 
 function showLogin() {
 
-    const loginScreen = document.getElementById("loginScreen");
-    const app = document.getElementById("app");
+    document
+        .getElementById("loginScreen")
+        ?.classList.remove("hidden");
 
-    if (loginScreen) {
-        loginScreen.classList.remove("hidden");
-    }
-
-    if (app) {
-        app.classList.add("hidden");
-    }
+    document
+        .getElementById("app")
+        ?.classList.add("hidden");
 }
 
 
 function showApp() {
 
-    const loginScreen = document.getElementById("loginScreen");
-    const app = document.getElementById("app");
+    document
+        .getElementById("loginScreen")
+        ?.classList.add("hidden");
 
-    if (loginScreen) {
-        loginScreen.classList.add("hidden");
-    }
-
-    if (app) {
-        app.classList.remove("hidden");
-    }
+    document
+        .getElementById("app")
+        ?.classList.remove("hidden");
 
     updateUserInfo();
     updateDashboard();
     renderInventory();
     updateBillProducts();
+    renderLowStock();
 
     openPage("homePage");
 }
 
 
-/* =========================================================
-   MOBILE OTP
-========================================================= */
+/* =========================
+   OTP LOGIN
+========================= */
 
 function sendOTP() {
 
-    const mobileInput = document.getElementById("mobileNumber");
+    const input = document.getElementById("mobileNumber");
 
-    if (!mobileInput) return;
+    if (!input) return;
 
-    const mobile = mobileInput.value.trim();
+    const mobile = input.value.trim();
 
     if (!/^[0-9]{10}$/.test(mobile)) {
 
@@ -107,28 +118,24 @@ function sendOTP() {
         return;
     }
 
-
     /*
-       DEVELOPMENT PLACEHOLDER
+      Temporary frontend OTP.
 
-       Real production OTP will be connected
-       to Firebase/Auth/backend later.
-
-       This temporary OTP is ONLY for testing
-       the application flow.
+      IMPORTANT:
+      Real SMS OTP requires Firebase/Auth or
+      another backend service.
     */
 
-    temporaryOTP = String(
-        Math.floor(100000 + Math.random() * 900000)
-    );
+    temporaryOTP =
+        String(Math.floor(100000 + Math.random() * 900000));
 
-    console.log("Development OTP:", temporaryOTP);
+    console.log("TEST OTP:", temporaryOTP);
 
     alert(
-        "OTP testing mode.\n\nYour OTP is: " +
-        temporaryOTP
+        "Testing OTP:\n\n" +
+        temporaryOTP +
+        "\n\nReal SMS OTP will be connected later."
     );
-
 
     document
         .getElementById("mobileLogin")
@@ -142,11 +149,11 @@ function sendOTP() {
 
 function verifyOTP() {
 
-    const otpInput = document.getElementById("otpInput");
+    const input = document.getElementById("otpInput");
 
-    if (!otpInput) return;
+    if (!input) return;
 
-    const otp = otpInput.value.trim();
+    const otp = input.value.trim();
 
     if (!temporaryOTP) {
 
@@ -161,7 +168,6 @@ function verifyOTP() {
 
         return;
     }
-
 
     document
         .getElementById("otpLogin")
@@ -187,7 +193,8 @@ function backToMobile() {
 
 function loginWithGmail() {
 
-    const gmailInput = document.getElementById("gmailInput");
+    const gmailInput =
+        document.getElementById("gmailInput");
 
     if (!gmailInput) return;
 
@@ -200,27 +207,20 @@ function loginWithGmail() {
         return;
     }
 
-
     const mobile =
-        document.getElementById("mobileNumber")?.value.trim() || "";
-
+        document.getElementById("mobileNumber")
+        ?.value.trim() || "";
 
     currentUser = {
-
         mobile: mobile,
-
         gmail: gmail,
-
         loginDate: new Date().toISOString()
-
     };
-
 
     localStorage.setItem(
         "smartInventoryUser",
         JSON.stringify(currentUser)
     );
-
 
     showApp();
 }
@@ -228,35 +228,27 @@ function loginWithGmail() {
 
 function updateUserInfo() {
 
-    const userInfo =
+    const element =
         document.getElementById("userInfo");
 
-    if (!userInfo) return;
+    if (!element) return;
 
-    if (currentUser) {
-
-        userInfo.textContent =
-            currentUser.gmail || currentUser.mobile || "Inventory Management";
-
-    } else {
-
-        userInfo.textContent =
-            "Inventory Management";
-    }
+    element.textContent =
+        currentUser?.gmail ||
+        currentUser?.mobile ||
+        "Inventory Management";
 }
 
 
 function logout() {
 
-    const confirmLogout =
-        confirm("Are you sure you want to logout?");
-
-    if (!confirmLogout) return;
+    if (!confirm("Are you sure you want to logout?")) {
+        return;
+    }
 
     localStorage.removeItem("smartInventoryUser");
 
     currentUser = null;
-
     temporaryOTP = null;
 
     showLogin();
@@ -275,41 +267,30 @@ function logout() {
 }
 
 
-/* =========================================================
-   PAGE NAVIGATION
-========================================================= */
+/* =========================
+   NAVIGATION
+========================= */
 
 function openPage(pageId, clickedButton = null) {
 
-    const pages =
-        document.querySelectorAll(".page");
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+            page.classList.remove("active");
+        });
 
-    pages.forEach(page => {
-
-        page.classList.remove("active");
-
-    });
-
-
-    const selectedPage =
+    const page =
         document.getElementById(pageId);
 
-    if (selectedPage) {
-
-        selectedPage.classList.add("active");
-
+    if (page) {
+        page.classList.add("active");
     }
 
-
-    const navItems =
-        document.querySelectorAll(".nav-item");
-
-    navItems.forEach(item => {
-
-        item.classList.remove("active");
-
-    });
-
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(item => {
+            item.classList.remove("active");
+        });
 
     if (clickedButton) {
 
@@ -317,205 +298,155 @@ function openPage(pageId, clickedButton = null) {
 
     } else {
 
-        const pageToNav = {
-
+        const map = {
             homePage: 0,
-
             inventoryPage: 1,
-
             aiSetMakerPage: 2,
-
             billPage: 3,
-
             morePage: 4
-
         };
 
+        const index = map[pageId];
 
-        if (pageToNav[pageId] !== undefined) {
+        if (index !== undefined) {
 
-            navItems[
-                pageToNav[pageId]
-            ]?.classList.add("active");
-
+            document
+                .querySelectorAll(".nav-item")
+                [index]
+                ?.classList.add("active");
         }
     }
 
-
     window.scrollTo({
-
         top: 0,
-
         behavior: "smooth"
-
     });
 
+    if (pageId === "homePage") {
+        updateDashboard();
+        renderLowStock();
+    }
 
     if (pageId === "inventoryPage") {
-
         renderInventory();
-
     }
-
 
     if (pageId === "billPage") {
-
         updateBillProducts();
-
     }
 
-
-    if (pageId === "homePage") {
-
-        updateDashboard();
-
+    if (pageId === "lowStockPage") {
+        renderLowStock();
     }
 }
 
 
-/* =========================================================
-   ADD PRODUCT
-========================================================= */
+/* =========================
+   NORMAL ADD
+========================= */
 
 function addProduct(event) {
 
     event.preventDefault();
 
+    const get = id =>
+        document.getElementById(id)?.value.trim() || "";
 
-    const name =
-        document.getElementById("productName").value.trim();
-
-    const sku =
-        document.getElementById("productSKU").value.trim();
-
-    const category =
-        document.getElementById("productCategory").value.trim();
-
-    const colour =
-        document.getElementById("productColour").value.trim();
-
-    const size =
-        document.getElementById("productSize").value.trim();
+    const name = get("productName");
+    const sku = get("productSKU");
+    const category = get("productCategory");
+    const colour = get("productColour");
+    const size = get("productSize");
+    const notes = get("productNotes");
 
     const quantity =
-        Number(
-            document.getElementById("productQuantity").value
-        ) || 0;
+        Number(get("productQuantity")) || 0;
 
     const purchasePrice =
-        Number(
-            document.getElementById("purchasePrice").value
-        ) || 0;
+        Number(get("purchasePrice")) || 0;
 
     const sellingPrice =
-        Number(
-            document.getElementById("sellingPrice").value
-        ) || 0;
-
+        Number(get("sellingPrice")) || 0;
 
     if (!name || !sku) {
 
-        alert("Product name and SKU are required.");
+        alert("Product Name and SKU are required.");
 
         return;
     }
 
-
-    const duplicate =
-        inventory.find(
+    const exists =
+        inventory.some(
             product =>
                 product.sku.toLowerCase() ===
                 sku.toLowerCase()
         );
 
+    if (exists) {
 
-    if (duplicate) {
-
-        alert(
-            "This SKU already exists in inventory."
-        );
+        alert("This SKU already exists.");
 
         return;
     }
 
-
     const product = {
 
-        id:
-            Date.now().toString(),
+        id: crypto.randomUUID
+            ? crypto.randomUUID()
+            : Date.now().toString(),
 
         name,
-
         sku,
-
         category,
-
         colour,
-
         size,
-
         quantity,
-
         purchasePrice,
-
         sellingPrice,
+        notes,
 
         createdAt:
             new Date().toISOString()
-
     };
-
 
     inventory.push(product);
 
     saveInventory();
 
-
     document
         .getElementById("productForm")
-        .reset();
+        ?.reset();
 
+    const quantityInput =
+        document.getElementById("productQuantity");
 
-    document
-        .getElementById("productQuantity")
-        .value = 0;
-
+    if (quantityInput) {
+        quantityInput.value = 0;
+    }
 
     updateDashboard();
-
     renderInventory();
-
     updateBillProducts();
+    renderLowStock();
 
-
-    alert(
-        "Product successfully added to inventory."
-    );
-
+    alert("Product added successfully.");
 
     openPage("inventoryPage");
 }
 
 
-/* =========================================================
-   SAVE INVENTORY
-========================================================= */
-
 function saveInventory() {
 
     localStorage.setItem(
-
         "smartInventoryProducts",
-
         JSON.stringify(inventory)
-
     );
 }
 
 
-/* =========================================================
-   INVENTORY RENDER
-========================================================= */
+/* =========================
+   INVENTORY
+========================= */
 
 function renderInventory(searchTerm = "") {
 
@@ -524,87 +455,74 @@ function renderInventory(searchTerm = "") {
 
     if (!container) return;
 
-
     let products = [...inventory];
 
+    const term =
+        searchTerm.toLowerCase().trim();
 
-    if (searchTerm) {
-
-        const term =
-            searchTerm.toLowerCase();
+    if (term) {
 
         products =
-            products.filter(product =>
+            products.filter(product => {
 
-                product.name
-                    .toLowerCase()
-                    .includes(term)
+                return (
 
-                ||
+                    String(product.name)
+                        .toLowerCase()
+                        .includes(term)
 
-                product.sku
-                    .toLowerCase()
-                    .includes(term)
+                    ||
 
-                ||
+                    String(product.sku)
+                        .toLowerCase()
+                        .includes(term)
 
-                (product.colour || "")
-                    .toLowerCase()
-                    .includes(term)
+                    ||
 
-                ||
+                    String(product.colour || "")
+                        .toLowerCase()
+                        .includes(term)
 
-                (product.category || "")
-                    .toLowerCase()
-                    .includes(term)
+                    ||
 
-            );
+                    String(product.category || "")
+                        .toLowerCase()
+                        .includes(term)
+
+                    ||
+
+                    String(product.size || "")
+                        .toLowerCase()
+                        .includes(term)
+                );
+            });
     }
 
-
-    if (products.length === 0) {
+    if (!products.length) {
 
         container.innerHTML = `
-
             <div class="empty-state">
-
                 <div>📦</div>
-
-                <h3>
-                    ${searchTerm
-                        ? "No matching products"
-                        : "No products yet"}
-                </h3>
-
-                <p>
-                    ${searchTerm
-                        ? "Try another search."
-                        : "Add your first product to inventory."}
-                </p>
-
+                <h3>No products found</h3>
+                <p>Add products to your inventory.</p>
             </div>
-
         `;
 
         return;
     }
 
-
     container.innerHTML =
         products.map(product => {
 
-            const lowStock =
-                product.quantity <= 5;
-
+            const low =
+                Number(product.quantity) <= LOW_STOCK_LIMIT;
 
             return `
-
                 <div class="product-item">
 
                     <div class="product-item-header">
 
                         <div>
-
                             <h3>
                                 ${escapeHTML(product.name)}
                             </h3>
@@ -613,9 +531,7 @@ function renderInventory(searchTerm = "") {
                                 SKU:
                                 ${escapeHTML(product.sku)}
                             </small>
-
                         </div>
-
 
                         <button
                             class="small-main-btn"
@@ -626,95 +542,52 @@ function renderInventory(searchTerm = "") {
 
                     </div>
 
-
                     <div class="product-item-info">
 
                         <div class="info-box">
-
                             <small>Category</small>
-
                             <strong>
-                                ${escapeHTML(
-                                    product.category || "-"
-                                )}
+                                ${escapeHTML(product.category || "-")}
                             </strong>
-
                         </div>
 
-
                         <div class="info-box">
-
                             <small>Colour</small>
-
                             <strong>
-                                ${escapeHTML(
-                                    product.colour || "-"
-                                )}
+                                ${escapeHTML(product.colour || "-")}
                             </strong>
-
                         </div>
 
-
                         <div class="info-box">
-
                             <small>Size</small>
-
                             <strong>
-                                ${escapeHTML(
-                                    product.size || "-"
-                                )}
+                                ${escapeHTML(product.size || "-")}
                             </strong>
-
                         </div>
 
-
                         <div class="info-box">
-
                             <small>Stock</small>
-
-                            <strong
-                                class="${
-                                    lowStock
-                                        ? "stock-low"
-                                        : "stock-good"
-                                }"
-                            >
+                            <strong class="${low ? "stock-low" : "stock-good"}">
                                 ${product.quantity}
-
-                                ${
-                                    lowStock
-                                        ? " ⚠️"
-                                        : ""
-                                }
-
+                                ${low ? " ⚠️" : ""}
                             </strong>
-
                         </div>
 
-
                         <div class="info-box">
-
                             <small>Purchase</small>
-
                             <strong>
-                                ₹${product.purchasePrice}
+                                ₹${Number(product.purchasePrice).toFixed(2)}
                             </strong>
-
                         </div>
 
-
                         <div class="info-box">
-
                             <small>Selling</small>
-
                             <strong>
-                                ₹${product.sellingPrice}
+                                ₹${Number(product.sellingPrice).toFixed(2)}
                             </strong>
-
                         </div>
 
                     </div>
-
 
                     <button
                         onclick="deleteProduct('${product.id}')"
@@ -723,7 +596,6 @@ function renderInventory(searchTerm = "") {
                             border:0;
                             background:transparent;
                             color:#d64545;
-                            font-size:12px;
                             font-weight:700;
                         "
                     >
@@ -731,35 +603,22 @@ function renderInventory(searchTerm = "") {
                     </button>
 
                 </div>
-
             `;
 
         }).join("");
 }
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
-
 function searchInventory() {
 
     const input =
-        document.getElementById(
-            "inventorySearch"
-        );
-
-    if (!input) return;
+        document.getElementById("inventorySearch");
 
     renderInventory(
-        input.value.trim()
+        input?.value || ""
     );
 }
 
-
-/* =========================================================
-   STOCK UPDATE
-========================================================= */
 
 function editStock(productId) {
 
@@ -770,43 +629,34 @@ function editStock(productId) {
 
     if (!product) return;
 
-
-    const newQuantity =
+    const value =
         prompt(
-            `Current stock: ${product.quantity}\n\nEnter new stock quantity:`,
+            `Current stock: ${product.quantity}\nEnter new quantity:`,
             product.quantity
         );
 
+    if (value === null) return;
 
-    if (newQuantity === null) return;
-
-
-    const quantity =
-        Number(newQuantity);
-
+    const quantity = Number(value);
 
     if (
         Number.isNaN(quantity) ||
         quantity < 0
     ) {
 
-        alert(
-            "Please enter a valid stock quantity."
-        );
+        alert("Enter a valid quantity.");
 
         return;
     }
-
 
     product.quantity = quantity;
 
     saveInventory();
 
-    renderInventory();
-
     updateDashboard();
-
+    renderInventory();
     updateBillProducts();
+    renderLowStock();
 }
 
 
@@ -819,280 +669,243 @@ function deleteProduct(productId) {
 
     if (!product) return;
 
-
-    const confirmation =
-        confirm(
-            `Delete "${product.name}" from inventory?`
-        );
-
-
-    if (!confirmation) return;
-
+    if (
+        !confirm(
+            `Delete "${product.name}"?`
+        )
+    ) {
+        return;
+    }
 
     inventory =
         inventory.filter(
             item => item.id !== productId
         );
 
-
     saveInventory();
 
-    renderInventory();
-
     updateDashboard();
-
+    renderInventory();
     updateBillProducts();
+    renderLowStock();
 }
 
 
-/* =========================================================
+/* =========================
    DASHBOARD
-========================================================= */
+========================= */
 
 function updateDashboard() {
 
     const totalProducts =
-        document.getElementById(
-            "totalProducts"
-        );
+        document.getElementById("totalProducts");
 
     const totalStock =
-        document.getElementById(
-            "totalStock"
-        );
+        document.getElementById("totalStock");
 
     const lowStock =
-        document.getElementById(
-            "lowStock"
-        );
+        document.getElementById("lowStock");
 
     const todaySale =
-        document.getElementById(
-            "todaySale"
-        );
+        document.getElementById("todaySale");
 
-
-    const totalQuantity =
+    const total =
         inventory.reduce(
-
             (sum, product) =>
                 sum + Number(product.quantity || 0),
-
             0
-
         );
 
-
-    const lowStockCount =
+    const low =
         inventory.filter(
-
             product =>
-                Number(product.quantity || 0) <= 5
-
+                Number(product.quantity || 0)
+                <= LOW_STOCK_LIMIT
         ).length;
-
 
     const today =
         new Date().toDateString();
 
-
-    const salesToday =
-        sales.filter(
-
-            sale =>
-                new Date(
-                    sale.date
-                ).toDateString() === today
-
-        );
-
-
-    const todayAmount =
-        salesToday.reduce(
-
-            (sum, sale) =>
-                sum + Number(sale.total || 0),
-
-            0
-
-        );
-
+    const amount =
+        sales
+            .filter(
+                sale =>
+                    new Date(sale.date)
+                        .toDateString() === today
+            )
+            .reduce(
+                (sum, sale) =>
+                    sum + Number(sale.total || 0),
+                0
+            );
 
     if (totalProducts) {
-
         totalProducts.textContent =
             inventory.length;
-
     }
-
 
     if (totalStock) {
-
         totalStock.textContent =
-            totalQuantity;
-
+            total;
     }
-
 
     if (lowStock) {
-
         lowStock.textContent =
-            lowStockCount;
-
+            low;
     }
 
-
     if (todaySale) {
-
         todaySale.textContent =
-            "₹" + todayAmount.toFixed(0);
-
+            "₹" + amount.toFixed(0);
     }
 }
 
 
-/* =========================================================
-   BILL PRODUCT LIST
-========================================================= */
+/* =========================
+   LOW STOCK
+========================= */
+
+function renderLowStock() {
+
+    const container =
+        document.getElementById("homeLowStock");
+
+    const products =
+        inventory.filter(
+            product =>
+                Number(product.quantity) <=
+                LOW_STOCK_LIMIT
+        );
+
+    if (container) {
+
+        if (!products.length) {
+
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div>✅</div>
+                    <h3>No low-stock products</h3>
+                    <p>Everything looks good.</p>
+                </div>
+            `;
+
+        } else {
+
+            container.innerHTML =
+                products.map(product => `
+                    <div class="product-item">
+
+                        <strong>
+                            ${escapeHTML(product.name)}
+                        </strong>
+
+                        <small>
+                            SKU: ${escapeHTML(product.sku)}
+                        </small>
+
+                        <strong class="stock-low">
+                            ${product.quantity} left
+                        </strong>
+
+                    </div>
+                `).join("");
+        }
+    }
+
+    const lowPage =
+        document.getElementById("lowStockList");
+
+    if (lowPage) {
+
+        lowPage.innerHTML =
+            products.map(product => `
+                <div class="product-item">
+
+                    <h3>
+                        ⚠️ ${escapeHTML(product.name)}
+                    </h3>
+
+                    <small>
+                        SKU: ${escapeHTML(product.sku)}
+                    </small>
+
+                    <strong class="stock-low">
+                        ${product.quantity} left
+                    </strong>
+
+                </div>
+            `).join("");
+    }
+}
+
+
+/* =========================
+   BILL PRODUCTS
+========================= */
 
 function updateBillProducts() {
 
     const select =
-        document.getElementById(
-            "billProduct"
-        );
+        document.getElementById("billProduct");
 
     if (!select) return;
 
+    if (!inventory.length) {
 
-    if (inventory.length === 0) {
-
-        select.innerHTML = `
-
-            <option value="">
-                No products available
-            </option>
-
-        `;
+        select.innerHTML =
+            `<option value="">No products available</option>`;
 
         return;
     }
 
-
     select.innerHTML = `
-
-        <option value="">
-            Select product
-        </option>
+        <option value="">Select product</option>
 
         ${
             inventory.map(product => `
-
-                <option
-                    value="${product.id}"
-                >
-
+                <option value="${product.id}">
                     ${escapeHTML(product.name)}
-                    —
-                    ₹${product.sellingPrice}
-                    —
-                    Stock: ${product.quantity}
-
+                    — ₹${Number(product.sellingPrice).toFixed(2)}
+                    — Stock: ${product.quantity}
                 </option>
-
             `).join("")
         }
-
     `;
 }
 
 
-/* =========================================================
-   BILL CREATION
-========================================================= */
+/* =========================
+   BILL + DISCOUNT
+========================= */
 
-function createBill() {
+function calculateBillPreview() {
 
     const productId =
-        document.getElementById(
-            "billProduct"
-        )?.value;
-
+        document.getElementById("billProduct")?.value;
 
     const quantity =
         Number(
-            document.getElementById(
-                "billQuantity"
-            )?.value
+            document.getElementById("billQuantity")?.value
         ) || 0;
-
 
     const discount =
         Number(
-            document.getElementById(
-                "billDiscount"
-            )?.value
+            document.getElementById("billDiscount")?.value
         ) || 0;
-
-
-    const customer =
-        document.getElementById(
-            "customerName"
-        )?.value.trim() || "Walk-in Customer";
-
-
-    if (!productId) {
-
-        alert(
-            "Please select a product."
-        );
-
-        return;
-    }
-
-
-    if (quantity <= 0) {
-
-        alert(
-            "Quantity must be at least 1."
-        );
-
-        return;
-    }
-
 
     const product =
         inventory.find(
             item => item.id === productId
         );
 
+    const preview =
+        document.getElementById("billCalculation");
 
-    if (!product) {
-
-        alert(
-            "Product not found."
-        );
-
-        return;
-    }
-
-
-    if (quantity > product.quantity) {
-
-        alert(
-
-            `Only ${product.quantity} units are available.`
-
-        );
-
-        return;
-    }
-
+    if (!product || !preview) return;
 
     const subtotal =
         Number(product.sellingPrice) *
         quantity;
-
 
     const finalDiscount =
         Math.min(
@@ -1100,20 +913,107 @@ function createBill() {
             subtotal
         );
 
+    const total =
+        subtotal - finalDiscount;
+
+    preview.innerHTML = `
+        <div>
+            Subtotal:
+            <strong>₹${subtotal.toFixed(2)}</strong>
+        </div>
+
+        <div>
+            Discount:
+            <strong>- ₹${finalDiscount.toFixed(2)}</strong>
+        </div>
+
+        <hr>
+
+        <div>
+            Total:
+            <strong>₹${total.toFixed(2)}</strong>
+        </div>
+    `;
+}
+
+
+function createBill() {
+
+    const productId =
+        document.getElementById("billProduct")?.value;
+
+    const quantity =
+        Number(
+            document.getElementById("billQuantity")?.value
+        ) || 0;
+
+    const discount =
+        Number(
+            document.getElementById("billDiscount")?.value
+        ) || 0;
+
+    const customer =
+        document.getElementById("customerName")
+        ?.value.trim() ||
+        "Walk-in Customer";
+
+    if (!productId) {
+
+        alert("Please select a product.");
+
+        return;
+    }
+
+    if (quantity <= 0) {
+
+        alert("Quantity must be at least 1.");
+
+        return;
+    }
+
+    const product =
+        inventory.find(
+            item => item.id === productId
+        );
+
+    if (!product) {
+
+        alert("Product not found.");
+
+        return;
+    }
+
+    if (quantity > product.quantity) {
+
+        alert(
+            `Only ${product.quantity} units available.`
+        );
+
+        return;
+    }
+
+    const subtotal =
+        Number(product.sellingPrice) *
+        quantity;
+
+    const finalDiscount =
+        Math.min(
+            Math.max(discount, 0),
+            subtotal
+        );
 
     const total =
         subtotal - finalDiscount;
 
-
     const billNumber =
         "SI-" +
-        Date.now().toString().slice(-8);
-
+        Date.now()
+            .toString()
+            .slice(-8);
 
     const sale = {
 
-        id:
-            Date.now().toString(),
+        id: Date.now().toString(),
 
         billNumber,
 
@@ -1121,61 +1021,42 @@ function createBill() {
 
         productId,
 
-        productName:
-            product.name,
+        productName: product.name,
 
-        sku:
-            product.sku,
+        sku: product.sku,
 
         quantity,
 
-        price:
-            product.sellingPrice,
+        price: product.sellingPrice,
 
         subtotal,
 
-        discount:
-            finalDiscount,
+        discount: finalDiscount,
 
         total,
 
-        date:
-            new Date().toISOString()
-
+        date: new Date().toISOString()
     };
 
-
-    /*
-       STOCK AUTOMATICALLY DEDUCTS
-    */
+    /* STOCK DEDUCTION */
 
     product.quantity -= quantity;
 
-
     sales.push(sale);
 
-
     localStorage.setItem(
-
         "smartInventorySales",
-
         JSON.stringify(sales)
-
     );
-
 
     saveInventory();
 
-
     showBillPreview(sale);
 
-
     updateDashboard();
-
     renderInventory();
-
     updateBillProducts();
-
+    renderLowStock();
 
     alert(
         "Bill created successfully.\nStock updated automatically."
@@ -1183,19 +1064,16 @@ function createBill() {
 }
 
 
-/* =========================================================
+/* =========================
    BILL PREVIEW
-========================================================= */
+========================= */
 
 function showBillPreview(sale) {
 
     const preview =
-        document.getElementById(
-            "billPreview"
-        );
+        document.getElementById("billPreview");
 
     if (!preview) return;
-
 
     preview.innerHTML = `
 
@@ -1203,345 +1081,775 @@ function showBillPreview(sale) {
 
             <div class="bill-header">
 
-                <h2>
-                    Smart Inventory
-                </h2>
+                <h2>Smart Inventory</h2>
 
-                <p>
-                    Parcha / Sale Bill
-                </p>
+                <p>Parcha / Sale Bill</p>
 
                 <small>
-                    Bill No:
-                    ${sale.billNumber}
+                    Bill No: ${escapeHTML(sale.billNumber)}
                 </small>
 
             </div>
 
+            <hr>
 
-            <div class="bill-row">
+            <p>
+                <strong>Customer:</strong>
+                ${escapeHTML(sale.customer)}
+            </p>
 
-                <span>Customer</span>
+            <p>
+                <strong>Product:</strong>
+                ${escapeHTML(sale.productName)}
+            </p>
 
-                <strong>
-                    ${escapeHTML(sale.customer)}
-                </strong>
+            <p>
+                <strong>SKU:</strong>
+                ${escapeHTML(sale.sku)}
+            </p>
 
-            </div>
+            <p>
+                <strong>Quantity:</strong>
+                ${sale.quantity}
+            </p>
 
+            <p>
+                <strong>Price:</strong>
+                ₹${Number(sale.price).toFixed(2)}
+            </p>
 
-            <div class="bill-row">
+            <hr>
 
-                <span>Product</span>
+            <p>
+                Subtotal:
+                ₹${Number(sale.subtotal).toFixed(2)}
+            </p>
 
-                <strong>
-                    ${escapeHTML(sale.productName)}
-                </strong>
+            <p>
+                Discount:
+                - ₹${Number(sale.discount).toFixed(2)}
+            </p>
 
-            </div>
-
-
-            <div class="bill-row">
-
-                <span>SKU</span>
-
-                <strong>
-                    ${escapeHTML(sale.sku)}
-                </strong>
-
-            </div>
-
-
-            <div class="bill-row">
-
-                <span>
-                    ${sale.quantity} × ₹${sale.price}
-                </span>
-
-                <strong>
-                    ₹${sale.subtotal.toFixed(2)}
-                </strong>
-
-            </div>
-
-
-            <div class="bill-row bill-discount">
-
-                <span>Discount</span>
-
-                <strong>
-                    -₹${sale.discount.toFixed(2)}
-                </strong>
-
-            </div>
-
-
-            <div class="bill-row bill-total">
-
-                <span>
-                    TOTAL
-                </span>
-
-                <strong>
-                    ₹${sale.total.toFixed(2)}
-                </strong>
-
-            </div>
-
+            <h2>
+                Total:
+                ₹${Number(sale.total).toFixed(2)}
+            </h2>
 
             <button
-                class="main-btn"
-                onclick="printBill()"
+                class="primary-btn"
+                onclick="window.print()"
             >
-                Print Bill
+                🖨️ Print Bill
             </button>
 
         </div>
-
     `;
 }
 
 
-function printBill() {
+/* =========================
+   AI FILE IMPORT
+========================= */
 
-    const preview =
-        document.getElementById(
-            "billPreview"
-        );
-
-    if (!preview) return;
-
-
-    const printWindow =
-        window.open(
-            "",
-            "_blank",
-            "width=500,height=700"
-        );
-
-
-    if (!printWindow) {
-
-        alert(
-            "Please allow pop-ups to print the bill."
-        );
-
-        return;
-    }
-
-
-    printWindow.document.write(`
-
-        <!DOCTYPE html>
-
-        <html>
-
-        <head>
-
-            <title>
-                Smart Inventory Bill
-            </title>
-
-            <style>
-
-                body {
-                    font-family: Arial;
-                    padding: 30px;
-                }
-
-                h2 {
-                    margin-bottom: 5px;
-                }
-
-                .bill-row {
-                    display:flex;
-                    justify-content:space-between;
-                    padding:10px 0;
-                    border-bottom:1px solid #ddd;
-                }
-
-                .bill-total {
-                    font-size:20px;
-                    font-weight:bold;
-                }
-
-            </style>
-
-        </head>
-
-        <body>
-
-            ${preview.innerHTML}
-
-        </body>
-
-        </html>
-
-    `);
-
-
-    printWindow.document.close();
-
-    printWindow.focus();
-
-    setTimeout(() => {
-
-        printWindow.print();
-
-    }, 300);
-}
-
-
-/* =========================================================
-   AI IMPORT
-========================================================= */
-
-function processAIFile() {
-
-    const fileInput =
-        document.getElementById(
-            "aiFile"
-        );
-
-
-    const results =
-        document.getElementById(
-            "aiResults"
-        );
-
-
-    if (!fileInput?.files?.length) {
-
-        alert(
-            "Please select an image or file first."
-        );
-
-        return;
-    }
-
+function handleAIFile(event) {
 
     const file =
-        fileInput.files[0];
+        event.target.files?.[0];
 
+    if (!file) return;
 
-    /*
-       Real AI/OCR API will be connected
-       here in the backend integration phase.
+    const result =
+        document.getElementById("aiResults");
 
-       For now this creates a review state
-       rather than pretending that AI has
-       actually analyzed the file.
-    */
+    if (!result) return;
 
+    result.innerHTML = `
+        <div class="info-card">
 
-    results.innerHTML = `
+            <h3>File Selected</h3>
 
-        <div class="form-card">
-
-            <h3>
-                File Ready for AI Processing
-            </h3>
-
-            <p style="
-                color:#718096;
-                margin-top:8px;
-                line-height:1.6;
-            ">
-
-                <strong>
-                    ${escapeHTML(file.name)}
-                </strong>
-
-                has been selected.
-
-                <br><br>
-
-                The production AI/OCR connection
-                will read the product information,
-                identify missing fields and send
-                complete records to inventory.
-
+            <p>
+                ${escapeHTML(file.name)}
             </p>
 
-            <div class="verified-box"
-                style="margin-top:20px;"
+            <p>
+                Size:
+                ${(file.size / 1024).toFixed(1)} KB
+            </p>
+
+            <button
+                class="primary-btn"
+                onclick="processImportedFile()"
             >
-                ✓ File successfully selected
-            </div>
+                Preview Records
+            </button>
 
         </div>
+    `;
 
+    window.selectedAIFile = file;
+}
+
+
+function processImportedFile() {
+
+    const file =
+        window.selectedAIFile;
+
+    const result =
+        document.getElementById("aiResults");
+
+    if (!file || !result) return;
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    if (extension === "csv") {
+
+        const reader = new FileReader();
+
+        reader.onload = event => {
+
+            const text =
+                event.target.result;
+
+            const rows =
+                text
+                    .split(/\r?\n/)
+                    .filter(Boolean);
+
+            const records = [];
+
+            rows.forEach((row, index) => {
+
+                const columns =
+                    row.split(",")
+                        .map(value =>
+                            value.trim()
+                        );
+
+                if (index === 0 &&
+                    columns[0]
+                        ?.toLowerCase()
+                        .includes("product")) {
+                    return;
+                }
+
+                if (!columns[0]) return;
+
+                records.push({
+
+                    name: columns[0] || "Unknown",
+
+                    sku: columns[1] || `IMPORT-${index}`,
+
+                    category: columns[2] || "",
+
+                    colour: columns[3] || "",
+
+                    size: columns[4] || "",
+
+                    quantity:
+                        Number(columns[5]) || 0,
+
+                    purchasePrice:
+                        Number(columns[6]) || 0,
+
+                    sellingPrice:
+                        Number(columns[7]) || 0
+                });
+            });
+
+            showImportPreview(records);
+        };
+
+        reader.readAsText(file);
+
+        return;
+    }
+
+    showImportPreview([]);
+}
+
+
+function showImportPreview(records) {
+
+    const result =
+        document.getElementById("aiResults");
+
+    if (!result) return;
+
+    if (!records.length) {
+
+        result.innerHTML = `
+
+            <div class="info-card">
+
+                <h3>AI Import Ready</h3>
+
+                <p>
+                    This file requires AI/document
+                    parsing before records can be
+                    created.
+                </p>
+
+                <p>
+                    Complete records will be added
+                    automatically after review.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+    window.pendingImportRecords = records;
+
+    result.innerHTML = `
+
+        <div class="info-card">
+
+            <h3>
+                Import Preview
+            </h3>
+
+            <p>
+                ${records.length}
+                records detected.
+            </p>
+
+            <div class="import-preview">
+
+                ${
+                    records.slice(0, 20)
+                    .map(record => `
+
+                        <div class="product-item">
+
+                            <strong>
+                                ${escapeHTML(record.name)}
+                            </strong>
+
+                            <small>
+                                SKU:
+                                ${escapeHTML(record.sku)}
+                            </small>
+
+                            <span>
+                                Qty:
+                                ${record.quantity}
+                            </span>
+
+                        </div>
+
+                    `)
+                    .join("")
+                }
+
+            </div>
+
+            <button
+                class="primary-btn full-btn"
+                onclick="addImportedRecords()"
+            >
+                ✓ Add All Records
+            </button>
+
+        </div>
     `;
 }
 
 
-/* =========================================================
-   QR SCANNER
-========================================================= */
+function addImportedRecords() {
 
-function startScanner() {
+    const records =
+        window.pendingImportRecords || [];
 
-    const results =
-        document.getElementById(
-            "scanResults"
+    let added = 0;
+    let skipped = 0;
+
+    records.forEach(record => {
+
+        const duplicate =
+            inventory.some(
+                product =>
+                    product.sku.toLowerCase() ===
+                    String(record.sku).toLowerCase()
+            );
+
+        if (duplicate) {
+
+            skipped++;
+
+            return;
+        }
+
+        inventory.push({
+
+            id:
+                Date.now().toString() +
+                Math.random(),
+
+            ...record,
+
+            createdAt:
+                new Date().toISOString()
+        });
+
+        added++;
+    });
+
+    saveInventory();
+
+    updateDashboard();
+    renderInventory();
+    updateBillProducts();
+    renderLowStock();
+
+    alert(
+        `${added} records added.\n` +
+        `${skipped} duplicate records skipped.`
+    );
+
+    openPage("inventoryPage");
+}
+
+
+/* =========================
+   QR / BARCODE SCANNER
+========================= */
+
+let scannerStream = null;
+let scannerVideo = null;
+let scannerTimer = null;
+let scannedProducts = [];
+
+
+async function startScanner() {
+
+    const result =
+        document.getElementById("scanResults");
+
+    if (!result) return;
+
+    if (!("BarcodeDetector" in window)) {
+
+        result.innerHTML = `
+            <div class="info-card">
+
+                <h3>Scanner unavailable</h3>
+
+                <p>
+                    Your browser does not support
+                    the built-in QR scanner.
+                </p>
+
+                <p>
+                    You can use a QR scanner app
+                    or a supported Chromium browser.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    try {
+
+        scannerStream =
+            await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: {
+                        ideal: "environment"
+                    }
+                }
+            });
+
+        scannerVideo =
+            document.createElement("video");
+
+        scannerVideo.autoplay = true;
+        scannerVideo.playsInline = true;
+
+        scannerVideo.style.width = "100%";
+        scannerVideo.style.borderRadius = "18px";
+
+        result.innerHTML = "";
+
+        result.appendChild(scannerVideo);
+
+        scannerVideo.srcObject =
+            scannerStream;
+
+        const detector =
+            new BarcodeDetector({
+                formats: [
+                    "qr_code",
+                    "code_128",
+                    "code_39",
+                    "ean_13",
+                    "ean_8"
+                ]
+            });
+
+        scannerTimer =
+            setInterval(async () => {
+
+                if (
+                    !scannerVideo ||
+                    scannerVideo.readyState < 2
+                ) {
+                    return;
+                }
+
+                try {
+
+                    const codes =
+                        await detector.detect(
+                            scannerVideo
+                        );
+
+                    if (!codes.length) return;
+
+                    const value =
+                        codes[0].rawValue;
+
+                    stopScanner();
+
+                    handleScannedCode(value);
+
+                } catch (error) {
+
+                    console.log(
+                        "Scanner error:",
+                        error
+                    );
+                }
+
+            }, 500);
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <div class="info-card">
+
+                <h3>Camera permission required</h3>
+
+                <p>
+                    Please allow camera access
+                    and try again.
+                </p>
+
+            </div>
+        `;
+    }
+}
+
+
+function stopScanner() {
+
+    if (scannerTimer) {
+
+        clearInterval(scannerTimer);
+
+        scannerTimer = null;
+    }
+
+    if (scannerStream) {
+
+        scannerStream
+            .getTracks()
+            .forEach(track =>
+                track.stop()
+            );
+
+        scannerStream = null;
+    }
+
+    scannerVideo = null;
+}
+
+
+function handleScannedCode(code) {
+
+    const product =
+        inventory.find(
+            item =>
+                item.sku.toLowerCase() ===
+                String(code).toLowerCase()
         );
 
+    const result =
+        document.getElementById("scanResults");
 
-    results.innerHTML = `
+    if (!product) {
 
-        <div class="form-card">
+        if (result) {
+
+            result.innerHTML = `
+                <div class="info-card">
+
+                    <h3>Product not found</h3>
+
+                    <p>
+                        Scanned Code:
+                        <strong>
+                            ${escapeHTML(code)}
+                        </strong>
+                    </p>
+
+                    <button
+                        class="primary-btn"
+                        onclick="startScanner()"
+                    >
+                        Scan Again
+                    </button>
+
+                </div>
+            `;
+        }
+
+        return;
+    }
+
+    addScannedProduct(product);
+
+    renderScannedItems();
+}
+
+
+function addScannedProduct(product) {
+
+    const existing =
+        scannedProducts.find(
+            item => item.productId === product.id
+        );
+
+    if (existing) {
+
+        existing.quantity++;
+
+    } else {
+
+        scannedProducts.push({
+
+            productId: product.id,
+
+            name: product.name,
+
+            sku: product.sku,
+
+            quantity: 1
+        });
+    }
+}
+
+
+function renderScannedItems() {
+
+    const result =
+        document.getElementById("scanResults");
+
+    if (!result) return;
+
+    result.innerHTML = `
+
+        <div class="info-card">
 
             <h3>
-                Camera Scanner
+                Scanned Items
+                (${scannedProducts.length})
             </h3>
 
-            <p style="
-                color:#718096;
-                margin-top:8px;
-                line-height:1.6;
-            ">
+            ${
+                scannedProducts
+                    .map(item => `
 
-                Camera permission and
-                production QR/SKU scanner
-                will be connected here.
+                        <div class="product-item">
 
-            </p>
+                            <strong>
+                                ${escapeHTML(item.name)}
+                            </strong>
 
-            <div class="verified-box"
-                style="
-                    margin-top:20px;
-                    color:#d88917;
-                    background:#fff5df;
-                "
+                            <small>
+                                SKU:
+                                ${escapeHTML(item.sku)}
+                            </small>
+
+                            <strong>
+                                Qty:
+                                ${item.quantity}
+                            </strong>
+
+                        </div>
+
+                    `)
+                    .join("")
+            }
+
+            <button
+                class="primary-btn full-btn"
+                onclick="reviewScannedItems()"
             >
-                Scanner module ready
-            </div>
+                Review List
+            </button>
+
+            <button
+                class="primary-btn full-btn"
+                onclick="startScanner()"
+            >
+                Scan More
+            </button>
 
         </div>
-
     `;
 }
 
 
-/* =========================================================
+function reviewScannedItems() {
+
+    if (!scannedProducts.length) {
+
+        alert("No products scanned.");
+
+        return;
+    }
+
+    let added = 0;
+
+    scannedProducts.forEach(item => {
+
+        const product =
+            inventory.find(
+                p => p.id === item.productId
+            );
+
+        if (!product) return;
+
+        /*
+          Scan Add means inventory count is updated
+          according to the scanned quantity.
+        */
+
+        product.quantity += item.quantity;
+
+        added++;
+    });
+
+    saveInventory();
+
+    updateDashboard();
+    renderInventory();
+    updateBillProducts();
+    renderLowStock();
+
+    alert(
+        `${added} scanned products updated in inventory.`
+    );
+
+    scannedProducts = [];
+
+    openPage("inventoryPage");
+}
+
+
+/* =========================
    AI SET MAKER
-========================================================= */
+========================= */
 
-function analyzeSaree() {
+let sareeImageFile = null;
+let detectedSareeColour = null;
 
-    const input =
-        document.getElementById(
-            "sareeImage"
+
+function handleSareeImage(event) {
+
+    sareeImageFile =
+        event.target.files?.[0] || null;
+
+    const result =
+        document.getElementById("setMakerResults");
+
+    if (!result || !sareeImageFile) return;
+
+    result.innerHTML = `
+
+        <div class="info-card">
+
+            <h3>
+                Saree Image Selected
+            </h3>
+
+            <p>
+                ${escapeHTML(sareeImageFile.name)}
+            </p>
+
+            <p>
+                Click "Find Matching Inventory"
+                to analyze the image.
+            </p>
+
+        </div>
+    `;
+}
+
+
+function setupDesignButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".design-card"
         );
 
+    buttons.forEach(
+        (button, index) => {
 
-    const results =
-        document.getElementById(
-            "setMakerResults"
-        );
+            button.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        selectedDesigns.includes(index)
+                    ) {
+
+                        selectedDesigns =
+                            selectedDesigns.filter(
+                                item =>
+                                    item !== index
+                            );
+
+                        button.classList.remove(
+                            "selected"
+                        );
+
+                    } else {
+
+                        selectedDesigns.push(index);
+
+                        button.classList.add(
+                            "selected"
+                        );
+                    }
+                }
+            );
+        }
+    );
+}
 
 
-    if (!input?.files?.length) {
+async function analyzeSaree() {
+
+    const result =
+        document.getElementById("setMakerResults");
+
+    if (!result) return;
+
+    if (!sareeImageFile) {
 
         alert(
             "Please select a saree image first."
@@ -1550,135 +1858,722 @@ function analyzeSaree() {
         return;
     }
 
+    result.innerHTML = `
+        <div class="info-card">
+            <h3>AI is analyzing...</h3>
+            <p>
+                Detecting dominant saree colour
+                and matching inventory.
+            </p>
+        </div>
+    `;
 
-    const file =
-        input.files[0];
+    try {
+
+        detectedSareeColour =
+            await detectImageColour(
+                sareeImageFile
+            );
+
+        const matches =
+            findColourMatches(
+                detectedSareeColour
+            );
+
+        renderSareeMatches(
+            detectedSareeColour,
+            matches
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        result.innerHTML = `
+            <div class="info-card">
+                <h3>Unable to analyze image</h3>
+                <p>Please try another image.</p>
+            </div>
+        `;
+    }
+}
 
 
-    /*
-       Real computer-vision AI integration
-       will be connected here.
+function detectImageColour(file) {
 
-       The production version will detect
-       the saree colour and compare it with
-       inventory colour records.
-    */
+    return new Promise(
+        (resolve, reject) => {
+
+            const image =
+                new Image();
+
+            const url =
+                URL.createObjectURL(file);
+
+            image.onload = () => {
+
+                const canvas =
+                    document.createElement("canvas");
+
+                const size = 100;
+
+                canvas.width = size;
+                canvas.height = size;
+
+                const context =
+                    canvas.getContext("2d");
+
+                context.drawImage(
+                    image,
+                    0,
+                    0,
+                    size,
+                    size
+                );
+
+                const data =
+                    context.getImageData(
+                        0,
+                        0,
+                        size,
+                        size
+                    ).data;
+
+                let r = 0;
+                let g = 0;
+                let b = 0;
+                let count = 0;
+
+                for (
+                    let i = 0;
+                    i < data.length;
+                    i += 16
+                ) {
+
+                    const red = data[i];
+                    const green = data[i + 1];
+                    const blue = data[i + 2];
+                    const alpha = data[i + 3];
+
+                    if (alpha < 100) continue;
+
+                    /*
+                      Ignore very white/black
+                      background pixels.
+                    */
+
+                    const brightness =
+                        (red + green + blue) / 3;
+
+                    if (
+                        brightness > 245 ||
+                        brightness < 15
+                    ) {
+                        continue;
+                    }
+
+                    r += red;
+                    g += green;
+                    b += blue;
+
+                    count++;
+                }
+
+                URL.revokeObjectURL(url);
+
+                if (!count) {
+
+                    resolve({
+                        r: 128,
+                        g: 128,
+                        b: 128,
+                        name: "Unknown"
+                    });
+
+                    return;
+                }
+
+                r = Math.round(r / count);
+                g = Math.round(g / count);
+                b = Math.round(b / count);
+
+                resolve({
+                    r,
+                    g,
+                    b,
+                    name: rgbToColourName(
+                        r,
+                        g,
+                        b
+                    )
+                });
+            };
+
+            image.onerror = reject;
+
+            image.src = url;
+        }
+    );
+}
 
 
-    results.innerHTML = `
+function rgbToColourName(r, g, b) {
 
-        <div class="form-card">
+    const max =
+        Math.max(r, g, b);
+
+    const min =
+        Math.min(r, g, b);
+
+    if (max < 50) return "Black";
+
+    if (min > 210) return "White";
+
+    if (
+        r > 170 &&
+        g < 100 &&
+        b < 100
+    ) {
+        return "Red";
+    }
+
+    if (
+        r > 180 &&
+        g > 100 &&
+        b < 100
+    ) {
+        return "Orange";
+    }
+
+    if (
+        r > 180 &&
+        g > 150 &&
+        b < 120
+    ) {
+        return "Yellow";
+    }
+
+    if (
+        g > r * 1.15 &&
+        g > b * 1.15
+    ) {
+        return "Green";
+    }
+
+    if (
+        b > r * 1.2 &&
+        b > g * 1.05
+    ) {
+        return "Blue";
+    }
+
+    if (
+        r > 120 &&
+        b > 100 &&
+        r > g * 1.15
+    ) {
+        return "Purple";
+    }
+
+    if (
+        r > 120 &&
+        g > 80 &&
+        b > 80 &&
+        Math.abs(r - b) < 60
+    ) {
+        return "Pink";
+    }
+
+    if (
+        r > g &&
+        g > b
+    ) {
+        return "Brown";
+    }
+
+    return "Mixed";
+}
+
+
+function findColourMatches(colour) {
+
+    if (!inventory.length) {
+        return [];
+    }
+
+    const target =
+        colour.name.toLowerCase();
+
+    const exact =
+        inventory.filter(
+            product =>
+                String(product.colour || "")
+                    .toLowerCase()
+                    .includes(target)
+        );
+
+    if (exact.length) {
+        return exact;
+    }
+
+    const keywords = {
+
+        red: [
+            "red",
+            "maroon",
+            "wine",
+            "burgundy",
+            "rani"
+        ],
+
+        blue: [
+            "blue",
+            "navy",
+            "royal",
+            "sky"
+        ],
+
+        green: [
+            "green",
+            "olive",
+            "mint",
+            "pista"
+        ],
+
+        purple: [
+            "purple",
+            "violet",
+            "lavender"
+        ],
+
+        pink: [
+            "pink",
+            "rose",
+            "rani"
+        ],
+
+        yellow: [
+            "yellow",
+            "mustard",
+            "gold"
+        ],
+
+        orange: [
+            "orange",
+            "peach"
+        ],
+
+        brown: [
+            "brown",
+            "coffee",
+            "chocolate"
+        ],
+
+        black: [
+            "black"
+        ],
+
+        white: [
+            "white",
+            "cream",
+            "ivory"
+        ]
+    };
+
+    const list =
+        keywords[target] || [];
+
+    return inventory.filter(
+        product => {
+
+            const colourText =
+                String(
+                    product.colour || ""
+                ).toLowerCase();
+
+            return list.some(
+                word =>
+                    colourText.includes(word)
+            );
+        }
+    );
+}
+
+
+function renderSareeMatches(
+    detectedColour,
+    matches
+) {
+
+    const result =
+        document.getElementById(
+            "setMakerResults"
+        );
+
+    if (!result) return;
+
+    result.innerHTML = `
+
+        <div class="info-card">
 
             <h3>
-                Saree Image Ready
+                AI Matching Result
             </h3>
 
-            <p style="
-                color:#718096;
-                margin-top:8px;
-                line-height:1.6;
-            ">
-
+            <p>
+                Detected Colour:
                 <strong>
-                    ${escapeHTML(file.name)}
+                    ${escapeHTML(
+                        detectedColour.name
+                    )}
                 </strong>
-
-                selected successfully.
-
-                <br><br>
-
-                The production AI colour-analysis
-                module will detect the closest
-                inventory colour and match it
-                against the configured set designs.
-
             </p>
 
-        </div>
+            <div
+                style="
+                    width:60px;
+                    height:60px;
+                    border-radius:50%;
+                    margin:12px 0;
+                    border:3px solid white;
+                    box-shadow:0 2px 10px #999;
+                    background:rgb(
+                        ${detectedColour.r},
+                        ${detectedColour.g},
+                        ${detectedColour.b}
+                    );
+                "
+            ></div>
 
+            <h3>
+                Closest Inventory Matches
+            </h3>
+
+            ${
+                matches.length
+                    ? matches
+                        .slice(0, 20)
+                        .map(product => `
+
+                            <div class="product-item">
+
+                                <strong>
+                                    ${escapeHTML(
+                                        product.name
+                                    )}
+                                </strong>
+
+                                <small>
+                                    SKU:
+                                    ${escapeHTML(
+                                        product.sku
+                                    )}
+                                </small>
+
+                                <small>
+                                    Colour:
+                                    ${escapeHTML(
+                                        product.colour ||
+                                        "-"
+                                    )}
+                                </small>
+
+                                <strong>
+                                    Stock:
+                                    ${product.quantity}
+                                </strong>
+
+                            </div>
+
+                        `)
+                        .join("")
+
+                    : `
+                        <div class="empty-state">
+
+                            <h3>
+                                No exact colour match
+                            </h3>
+
+                            <p>
+                                Try another saree
+                                image or add more
+                                colour variants
+                                to inventory.
+                            </p>
+
+                        </div>
+                    `
+            }
+
+        </div>
     `;
 }
 
 
-/* =========================================================
+/* =========================
    PROFILE
-========================================================= */
+========================= */
 
 function openProfile() {
 
-    if (!currentUser) {
+    const email =
+        currentUser?.gmail ||
+        "Not connected";
 
-        showLogin();
+    const mobile =
+        currentUser?.mobile ||
+        "Not connected";
+
+    const action =
+        confirm(
+            "Smart Inventory Profile\n\n" +
+            "Gmail: " + email +
+            "\nMobile: " + mobile +
+            "\n\nPress OK to logout."
+        );
+
+    if (action) {
+        logout();
+    }
+}
+
+
+/* =========================
+   FILTER BUTTONS
+========================= */
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const button =
+            event.target.closest(
+                ".filter-btn"
+            );
+
+        if (!button) return;
+
+        document
+            .querySelectorAll(".filter-btn")
+            .forEach(
+                item =>
+                    item.classList.remove(
+                        "active"
+                    )
+            );
+
+        button.classList.add("active");
+
+        const mode =
+            button.textContent
+                .trim()
+                .toLowerCase();
+
+        let products =
+            [...inventory];
+
+        if (mode === "low stock") {
+
+            products =
+                products.filter(
+                    product =>
+                        product.quantity <=
+                        LOW_STOCK_LIMIT
+                );
+
+        } else if (
+            mode === "out of stock"
+        ) {
+
+            products =
+                products.filter(
+                    product =>
+                        Number(
+                            product.quantity
+                        ) === 0
+                );
+        }
+
+        renderInventoryArray(products);
+    }
+);
+
+
+function renderInventoryArray(products) {
+
+    const container =
+        document.getElementById(
+            "inventoryList"
+        );
+
+    if (!container) return;
+
+    if (!products.length) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <div>📦</div>
+                <h3>No products found</h3>
+            </div>
+        `;
 
         return;
     }
 
+    container.innerHTML =
+        products.map(product => {
 
-    alert(
+            const low =
+                product.quantity <=
+                LOW_STOCK_LIMIT;
 
-        "Smart Inventory Account\n\n" +
+            return `
 
-        "Mobile: " +
-        (currentUser.mobile || "-") +
+                <div class="product-item">
 
-        "\nGmail: " +
-        (currentUser.gmail || "-")
+                    <div class="product-item-header">
 
-    );
+                        <div>
+
+                            <h3>
+                                ${escapeHTML(
+                                    product.name
+                                )}
+                            </h3>
+
+                            <small>
+                                SKU:
+                                ${escapeHTML(
+                                    product.sku
+                                )}
+                            </small>
+
+                        </div>
+
+                        <button
+                            class="small-main-btn"
+                            onclick="editStock('${product.id}')"
+                        >
+                            Update Stock
+                        </button>
+
+                    </div>
+
+                    <div class="product-item-info">
+
+                        <div class="info-box">
+                            <small>Colour</small>
+                            <strong>
+                                ${escapeHTML(
+                                    product.colour || "-"
+                                )}
+                            </strong>
+                        </div>
+
+                        <div class="info-box">
+                            <small>Size</small>
+                            <strong>
+                                ${escapeHTML(
+                                    product.size || "-"
+                                )}
+                            </strong>
+                        </div>
+
+                        <div class="info-box">
+                            <small>Stock</small>
+                            <strong class="${
+                                low
+                                    ? "stock-low"
+                                    : "stock-good"
+                            }">
+                                ${product.quantity}
+                            </strong>
+                        </div>
+
+                        <div class="info-box">
+                            <small>Selling</small>
+                            <strong>
+                                ₹${Number(
+                                    product.sellingPrice
+                                ).toFixed(2)}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <button
+                        onclick="deleteProduct('${product.id}')"
+                        style="
+                            margin-top:15px;
+                            border:0;
+                            background:transparent;
+                            color:#d64545;
+                            font-weight:700;
+                        "
+                    >
+                        Delete Product
+                    </button>
+
+                </div>
+            `;
+
+        }).join("");
 }
 
 
-/* =========================================================
-   SECURITY / HTML ESCAPE
-========================================================= */
+/* =========================
+   UTILITY
+========================= */
 
 function escapeHTML(value) {
 
     return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
-/* =========================================================
-   DEVELOPMENT RESET
-========================================================= */
+/* =========================
+   GLOBAL FUNCTIONS
+   For onclick="" in HTML
+========================= */
 
-function resetApplicationData() {
+window.showLogin = showLogin;
+window.showApp = showApp;
 
-    const confirmation =
-        confirm(
-            "This will delete all local inventory, bills and login data. Continue?"
-        );
+window.sendOTP = sendOTP;
+window.verifyOTP = verifyOTP;
+window.backToMobile = backToMobile;
+window.loginWithGmail = loginWithGmail;
+window.logout = logout;
 
+window.openPage = openPage;
 
-    if (!confirmation) return;
+window.addProduct = addProduct;
 
+window.searchInventory = searchInventory;
+window.editStock = editStock;
+window.deleteProduct = deleteProduct;
 
-    localStorage.removeItem(
-        "smartInventoryProducts"
-    );
+window.updateDashboard = updateDashboard;
 
-    localStorage.removeItem(
-        "smartInventorySales"
-    );
+window.createBill = createBill;
+window.calculateBillPreview = calculateBillPreview;
 
-    localStorage.removeItem(
-        "smartInventoryUser"
-    );
+window.startScanner = startScanner;
+window.stopScanner = stopScanner;
+window.reviewScannedItems = reviewScannedItems;
 
+window.analyzeSaree = analyzeSaree;
 
-    inventory = [];
+window.openProfile = openProfile;
 
-    sales = [];
+window.processImportedFile =
+    processImportedFile;
 
-    currentUser = null;
-
-    temporaryOTP = null;
-
-
-    location.reload();
-}
+window.addImportedRecords =
+    addImportedRecords;
