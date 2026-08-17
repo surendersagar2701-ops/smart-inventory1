@@ -5,143 +5,139 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     >
 
     <meta
         name="theme-color"
-        content="#1824b8"
+        content="#6d28d9"
+    >
+
+    <meta
+        name="description"
+        content="Smart Inventory - AI powered inventory management"
     >
 
     <title>Smart Inventory</title>
 
+    <link rel="stylesheet" href="style.css">
+
     <link
-        rel="stylesheet"
-        href="style.css"
+        rel="manifest"
+        href="manifest.json"
     >
 </head>
 
 <body>
 
-
 <!-- =====================================================
-     LOGIN SCREEN
+     LOGIN
 ===================================================== -->
 
-<section
-    id="loginScreen"
-    class="login-screen"
->
+<section id="loginScreen" class="login-screen">
 
     <div class="login-card">
 
-        <div class="login-logo">
-            SI
+        <div class="brand-large">
+            <div class="brand-logo">SI</div>
+
+            <div>
+                <h1>Smart Inventory</h1>
+                <p>Smart stock management</p>
+            </div>
         </div>
 
-        <h1>
-            Smart Inventory
-        </h1>
+        <div id="mobileLogin">
 
-        <p class="login-subtitle">
-            Manage • Track • Grow
-        </p>
+            <h2>Welcome back</h2>
 
+            <p class="muted">
+                Login with your mobile number
+            </p>
 
-        <!-- MOBILE LOGIN -->
+            <div class="input-group">
 
-        <div
-            id="mobileLogin"
-            class="login-step"
-        >
-
-            <label>
-                Mobile Number
-            </label>
-
-            <div class="mobile-input">
-
-                <span>
-                    +91
-                </span>
+                <label>Mobile Number</label>
 
                 <input
                     id="mobileNumber"
                     type="tel"
                     maxlength="10"
-                    placeholder="Enter mobile number"
+                    placeholder="Enter 10 digit mobile number"
                 >
 
             </div>
 
-
             <button
-                class="primary-btn full-btn"
+                class="primary-btn full"
                 onclick="sendOTP()"
             >
-                Send OTP
+                Continue
             </button>
 
         </div>
 
 
-        <!-- OTP -->
+        <div id="otpLogin" class="hidden">
 
-        <div
-            id="otpLogin"
-            class="login-step hidden"
-        >
+            <h2>Verify OTP</h2>
 
-            <label>
-                Enter OTP
-            </label>
+            <p class="muted">
+                Enter the OTP sent to your mobile
+            </p>
 
-            <input
-                id="otpInput"
-                type="text"
-                maxlength="6"
-                placeholder="6 digit OTP"
-            >
+            <div class="input-group">
 
+                <label>OTP</label>
+
+                <input
+                    id="otpInput"
+                    type="number"
+                    maxlength="6"
+                    placeholder="Enter OTP"
+                >
+
+            </div>
 
             <button
-                class="primary-btn full-btn"
+                class="primary-btn full"
                 onclick="verifyOTP()"
             >
                 Verify OTP
             </button>
 
-
             <button
                 class="text-btn"
                 onclick="backToMobile()"
             >
-                ← Change mobile number
+                Change mobile number
             </button>
 
         </div>
 
 
-        <!-- GMAIL -->
+        <div id="gmailLogin" class="hidden">
 
-        <div
-            id="gmailLogin"
-            class="login-step hidden"
-        >
+            <h2>Connect Gmail</h2>
 
-            <label>
-                Gmail Address
-            </label>
+            <p class="muted">
+                Connect your Gmail to continue
+            </p>
 
-            <input
-                id="gmailInput"
-                type="email"
-                placeholder="example@gmail.com"
-            >
+            <div class="input-group">
 
+                <label>Gmail</label>
+
+                <input
+                    id="gmailInput"
+                    type="email"
+                    placeholder="yourname@gmail.com"
+                >
+
+            </div>
 
             <button
-                class="primary-btn full-btn"
+                class="primary-btn full"
                 onclick="loginWithGmail()"
             >
                 Continue with Gmail
@@ -149,58 +145,41 @@
 
         </div>
 
-
-        <p class="login-note">
-            Your inventory data stays saved with your account.
-        </p>
-
     </div>
 
 </section>
 
 
-
 <!-- =====================================================
-     MAIN APPLICATION
+     APP
 ===================================================== -->
 
-<div
-    id="app"
-    class="app hidden"
->
+<div id="app" class="app hidden">
 
 
 <!-- =====================================================
-     TOP HEADER
+     TOP BAR
 ===================================================== -->
 
-<header class="top-header">
+<header class="topbar">
 
-    <div class="brand-area">
+    <div class="brand">
 
-        <div class="brand-logo">
+        <div class="brand-logo small">
             SI
         </div>
 
         <div>
-
-            <h2>
-                Smart Inventory
-            </h2>
-
-            <small id="userInfo">
-                Inventory Management
-            </small>
-
+            <strong>Smart Inventory</strong>
+            <small>AI Stock Manager</small>
         </div>
 
     </div>
 
-
     <button
-        class="profile-btn"
+        class="icon-button"
         onclick="openProfile()"
-        title="Profile"
+        aria-label="Profile"
     >
         👤
     </button>
@@ -208,16 +187,15 @@
 </header>
 
 
-
 <!-- =====================================================
-     MAIN CONTENT
+     MAIN
 ===================================================== -->
 
-<main class="main-content">
+<main>
 
 
 <!-- =====================================================
-     HOME PAGE
+     HOME
 ===================================================== -->
 
 <section
@@ -228,311 +206,218 @@
     <div class="page-heading">
 
         <div>
+            <span class="eyebrow">
+                DASHBOARD
+            </span>
 
-            <h1>
-                Dashboard
-            </h1>
+            <h1>Good to see you 👋</h1>
 
             <p>
-                Welcome to Smart Inventory
+                Manage your inventory smarter.
             </p>
-
         </div>
 
     </div>
 
-
-    <!-- STAT CARDS -->
 
     <div class="stats-grid">
 
+        <div class="stat-card purple">
 
-        <div class="stat-card">
+            <div class="stat-icon">📦</div>
 
-            <div class="stat-icon">
-                📦
-            </div>
+            <span>Total Products</span>
 
-            <div>
-
-                <span>
-                    Total Products
-                </span>
-
-                <strong id="totalProducts">
-                    0
-                </strong>
-
-            </div>
+            <strong id="totalProducts">
+                0
+            </strong>
 
         </div>
 
 
-        <div class="stat-card">
+        <div class="stat-card blue">
 
-            <div class="stat-icon">
-                📊
-            </div>
+            <div class="stat-icon">📊</div>
 
-            <div>
+            <span>Total Stock</span>
 
-                <span>
-                    Total Stock
-                </span>
-
-                <strong id="totalStock">
-                    0
-                </strong>
-
-            </div>
+            <strong id="totalStock">
+                0
+            </strong>
 
         </div>
 
 
-        <div class="stat-card warning-card">
+        <div class="stat-card orange">
 
-            <div class="stat-icon">
-                ⚠️
-            </div>
+            <div class="stat-icon">⚠️</div>
 
-            <div>
+            <span>Low Stock</span>
 
-                <span>
-                    Low Stock
-                </span>
-
-                <strong id="lowStock">
-                    0
-                </strong>
-
-            </div>
+            <strong id="lowStock">
+                0
+            </strong>
 
         </div>
 
 
-        <div class="stat-card">
+        <div class="stat-card green">
 
-            <div class="stat-icon">
-                💰
-            </div>
+            <div class="stat-icon">₹</div>
 
-            <div>
+            <span>Today's Sales</span>
 
-                <span>
-                    Today's Sale
-                </span>
-
-                <strong id="todaySale">
-                    ₹0
-                </strong>
-
-            </div>
+            <strong id="todaySale">
+                ₹0
+            </strong>
 
         </div>
 
     </div>
 
 
+    <div class="section-title">
 
-    <!-- QUICK ACTIONS -->
+        <h2>Quick Actions</h2>
 
-    <h2 class="section-title">
-        Quick Actions
-    </h2>
+    </div>
 
 
     <div class="quick-grid">
 
-
         <button
-            class="action-card"
+            class="quick-card"
             onclick="openPage('addProductPage')"
         >
 
-            <div class="action-icon">
+            <span class="quick-icon purple-bg">
                 ＋
-            </div>
+            </span>
 
-            <div>
+            <strong>Add Product</strong>
 
-                <strong>
-                    Normal Add
-                </strong>
-
-                <span>
-                    Add product manually
-                </span>
-
-            </div>
+            <small>
+                Add new stock
+            </small>
 
         </button>
 
 
         <button
-            class="action-card"
-            onclick="openPage('bulkAddPage')"
+            class="quick-card"
+            onclick="openPage('bulkPage')"
         >
 
-            <div class="action-icon">
-                📥
-            </div>
+            <span class="quick-icon blue-bg">
+                ⇧
+            </span>
 
-            <div>
+            <strong>Bulk Add</strong>
 
-                <strong>
-                    Bulk Product Add
-                </strong>
-
-                <span>
-                    Add products in bulk
-                </span>
-
-            </div>
+            <small>
+                Import products
+            </small>
 
         </button>
 
 
         <button
-            class="action-card"
-            onclick="openPage('inventoryPage')"
+            class="quick-card"
+            onclick="openPage('scannerPage')"
         >
 
-            <div class="action-icon">
-                📦
-            </div>
+            <span class="quick-icon green-bg">
+                ▣
+            </span>
 
-            <div>
+            <strong>Scan SKU</strong>
 
-                <strong>
-                    Inventory
-                </strong>
-
-                <span>
-                    View all products
-                </span>
-
-            </div>
+            <small>
+                Scan QR / barcode
+            </small>
 
         </button>
 
 
         <button
-            class="action-card"
-            onclick="openPage('billPage')"
-        >
-
-            <div class="action-icon">
-                🧾
-            </div>
-
-            <div>
-
-                <strong>
-                    Create Parcha
-                </strong>
-
-                <span>
-                    Create customer bill
-                </span>
-
-            </div>
-
-        </button>
-
-
-        <button
-            class="action-card"
+            class="quick-card"
             onclick="openPage('aiSetMakerPage')"
         >
 
-            <div class="action-icon">
-                ✨
-            </div>
+            <span class="quick-icon pink-bg">
+                ✦
+            </span>
 
-            <div>
+            <strong>AI Set Maker</strong>
 
-                <strong>
-                    AI Set Maker
-                </strong>
-
-                <span>
-                    Match saree with inventory
-                </span>
-
-            </div>
+            <small>
+                Match saree colours
+            </small>
 
         </button>
 
 
         <button
-            class="action-card"
-            onclick="openPage('lowStockPage')"
+            class="quick-card"
+            onclick="openPage('billPage')"
         >
 
-            <div class="action-icon">
-                ⚠️
-            </div>
+            <span class="quick-icon orange-bg">
+                ₹
+            </span>
 
-            <div>
+            <strong>Create Bill</strong>
 
-                <strong>
-                    Low Stock Alerts
-                </strong>
+            <small>
+                Sale + discount
+            </small>
 
-                <span>
-                    Check products running low
-                </span>
+        </button>
 
-            </div>
+
+        <button
+            class="quick-card"
+            onclick="openPage('inventoryPage')"
+        >
+
+            <span class="quick-icon teal-bg">
+                ☷
+            </span>
+
+            <strong>Inventory</strong>
+
+            <small>
+                View all products
+            </small>
 
         </button>
 
     </div>
 
 
-    <!-- LOW STOCK PREVIEW -->
+    <div class="section-title">
 
-    <div class="section-header">
-
-        <h2>
-            Low Stock Alerts
-        </h2>
+        <h2>Low Stock</h2>
 
         <button
             class="link-btn"
             onclick="openPage('lowStockPage')"
         >
-            View All
+            View all
         </button>
 
     </div>
 
 
-    <div
-        id="homeLowStock"
-        class="home-list"
-    >
-
-        <div class="empty-state">
-            <div>📦</div>
-
-            <h3>
-                No low-stock products
-            </h3>
-
-            <p>
-                Everything looks good.
-            </p>
-        </div>
+    <div id="homeLowStock" class="list-container">
 
     </div>
 
 </section>
 
 
-
 <!-- =====================================================
-     NORMAL ADD PAGE
+     ADD PRODUCT
 ===================================================== -->
 
 <section
@@ -551,12 +436,14 @@
 
         <div>
 
-            <h1>
-                Normal Add
-            </h1>
+            <span class="eyebrow">
+                PRODUCT ADD
+            </span>
+
+            <h1>Normal Add</h1>
 
             <p>
-                Add a product manually
+                Add one product manually.
             </p>
 
         </div>
@@ -564,87 +451,79 @@
     </div>
 
 
-    <div class="form-card">
+    <form id="productForm" class="form-card">
 
-        <form id="productForm">
+        <div class="form-section">
 
+            <h3>Basic Information</h3>
 
-            <h3>
-                Product Details
-            </h3>
+            <div class="form-grid">
 
+                <div class="input-group">
 
-            <label>
-                Product Name *
-            </label>
+                    <label>Product Name *</label>
 
-            <input
-                id="productName"
-                required
-                placeholder="e.g. Wireless Mouse"
-            >
+                    <input
+                        id="productName"
+                        required
+                        placeholder="Example: Velvet Bangle"
+                    >
 
-
-            <label>
-                SKU *
-            </label>
-
-            <input
-                id="productSKU"
-                required
-                placeholder="e.g. WM-001"
-            >
+                </div>
 
 
-            <label>
-                Section / Category
-            </label>
+                <div class="input-group">
 
-            <input
-                id="productCategory"
-                placeholder="e.g. Electronics"
-            >
+                    <label>SKU *</label>
+
+                    <input
+                        id="productSKU"
+                        required
+                        placeholder="Example: VB-RED-24"
+                    >
+
+                </div>
 
 
-            <div class="two-column">
+                <div class="input-group">
 
-                <div>
+                    <label>Category</label>
 
-                    <label>
-                        Colour
-                    </label>
+                    <input
+                        id="productCategory"
+                        placeholder="Bangles / Saree / Cosmetics"
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label>Colour</label>
 
                     <input
                         id="productColour"
-                        placeholder="Black"
+                        placeholder="Local colour name"
                     >
 
                 </div>
 
 
-                <div>
+                <div class="input-group">
 
-                    <label>
-                        Size / Variant
-                    </label>
+                    <label>Size</label>
 
                     <input
                         id="productSize"
-                        placeholder="Standard"
+                        placeholder="2.2 / 2.4 / Free Size"
                     >
 
                 </div>
 
-            </div>
 
+                <div class="input-group">
 
-            <div class="two-column">
-
-                <div>
-
-                    <label>
-                        Quantity
-                    </label>
+                    <label>Quantity</label>
 
                     <input
                         id="productQuantity"
@@ -656,17 +535,31 @@
                 </div>
 
 
-                <div>
+                <div class="input-group">
 
-                    <label>
-                        Purchase Price (₹)
-                    </label>
+                    <label>Purchase Price</label>
 
                     <input
                         id="purchasePrice"
                         type="number"
                         min="0"
-                        value="0"
+                        step="0.01"
+                        placeholder="₹0"
+                    >
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label>Selling Price</label>
+
+                    <input
+                        id="sellingPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="₹0"
                     >
 
                 </div>
@@ -674,50 +567,38 @@
             </div>
 
 
-            <label>
-                Selling Price (₹)
-            </label>
+            <div class="input-group">
 
-            <input
-                id="sellingPrice"
-                type="number"
-                min="0"
-                value="0"
-            >
+                <label>Notes</label>
 
+                <textarea
+                    id="productNotes"
+                    placeholder="Optional notes"
+                ></textarea>
 
-            <label>
-                Notes
-            </label>
+            </div>
 
-            <textarea
-                id="productNotes"
-                rows="3"
-                placeholder="Optional notes"
-            ></textarea>
+        </div>
 
 
-            <button
-                type="submit"
-                class="primary-btn full-btn"
-            >
-                ✓ Save Product
-            </button>
+        <button
+            type="submit"
+            class="primary-btn full"
+        >
+            ✓ Add Product
+        </button>
 
-        </form>
-
-    </div>
+    </form>
 
 </section>
 
 
-
 <!-- =====================================================
-     BULK ADD MAIN
+     BULK
 ===================================================== -->
 
 <section
-    id="bulkAddPage"
+    id="bulkPage"
     class="page"
 >
 
@@ -732,184 +613,93 @@
 
         <div>
 
-            <h1>
-                Bulk Product Add
-            </h1>
-
-            <p>
-                Choose your preferred method
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <div class="bulk-options">
-
-
-        <button
-            class="bulk-option"
-            onclick="openPage('aiImportPage')"
-        >
-
-            <div class="big-option-icon">
-                🖼️
-            </div>
-
-            <h2>
-                Image / File Import + AI
-            </h2>
-
-            <p>
-                Import image or file. AI will read
-                product information and prepare
-                inventory records.
-            </p>
-
-            <span>
-                →
+            <span class="eyebrow">
+                BULK PRODUCT ADD
             </span>
 
-        </button>
+            <h1>Import Products</h1>
+
+            <p>
+                Add many products at once.
+            </p>
+
+        </div>
+
+    </div>
 
 
-        <button
-            class="bulk-option"
-            onclick="openPage('scanPage')"
-        >
+    <div class="method-grid">
 
-            <div class="big-option-icon">
-                📷
+        <div class="method-card">
+
+            <div class="method-icon">
+                ✦
             </div>
 
-            <h2>
-                Scan Add
-            </h2>
+            <h3>AI File Import</h3>
 
             <p>
-                Scan SKU / QR codes and add
-                products in bulk.
+                Upload CSV data and review detected
+                records before adding them.
             </p>
 
-            <span>
-                →
-            </span>
+            <label
+                class="primary-btn full file-btn"
+            >
 
-        </button>
+                Choose File
 
-    </div>
+                <input
+                    id="aiFile"
+                    type="file"
+                    accept=".csv,.txt,.xlsx"
+                    hidden
+                >
 
-
-    <div class="info-card">
-
-        <h3>
-            How it works
-        </h3>
-
-        <p>
-            ① Choose your preferred method
-        </p>
-
-        <p>
-            ② Import or scan products
-        </p>
-
-        <p>
-            ③ Review the records
-        </p>
-
-        <p>
-            ④ Confirm and add to inventory
-        </p>
-
-    </div>
-
-</section>
-
-
-
-<!-- =====================================================
-     AI IMPORT PAGE
-===================================================== -->
-
-<section
-    id="aiImportPage"
-    class="page"
->
-
-    <div class="page-heading">
-
-        <button
-            class="back-btn"
-            onclick="openPage('bulkAddPage')"
-        >
-            ←
-        </button>
-
-        <div>
-
-            <h1>
-                Image / File Import + AI
-            </h1>
-
-            <p>
-                Let AI read your product data
-            </p>
+            </label>
 
         </div>
 
-    </div>
 
+        <div class="method-card">
 
-    <div class="upload-card">
+            <div class="method-icon">
+                ▣
+            </div>
 
-        <div class="upload-icon">
-            ☁️
+            <h3>Scan Add</h3>
+
+            <p>
+                Scan SKU QR/barcodes and add
+                stock quickly.
+            </p>
+
+            <button
+                class="secondary-btn full"
+                onclick="openPage('scannerPage')"
+            >
+                Open Scanner
+            </button>
+
         </div>
-
-        <h2>
-            Upload Product File
-        </h2>
-
-        <p>
-            Image, PDF, CSV or Excel
-        </p>
-
-
-        <input
-            id="aiFile"
-            type="file"
-            accept="image/*,.pdf,.csv,.xlsx,.xls"
-            hidden
-        >
-
-
-        <label
-            for="aiFile"
-            class="primary-btn"
-        >
-            Choose File
-        </label>
 
     </div>
 
 
     <div
         id="aiResults"
-        class="results-area"
+        class="results-container"
     ></div>
 
 </section>
 
 
-
 <!-- =====================================================
-     SCAN ADD PAGE
+     SCANNER
 ===================================================== -->
 
 <section
-    id="scanPage"
+    id="scannerPage"
     class="page"
 >
 
@@ -917,19 +707,21 @@
 
         <button
             class="back-btn"
-            onclick="openPage('bulkAddPage')"
+            onclick="openPage('homePage')"
         >
             ←
         </button>
 
         <div>
 
-            <h1>
-                Scan Add
-            </h1>
+            <span class="eyebrow">
+                SCAN ADD
+            </span>
+
+            <h1>SKU Scanner</h1>
 
             <p>
-                Scan SKU / QR codes
+                Scan QR code or barcode.
             </p>
 
         </div>
@@ -937,34 +729,31 @@
     </div>
 
 
-    <div class="scanner-box">
+    <div class="scanner-card">
 
-        <div class="scanner-frame">
-
-            <span></span>
-
-            <div>
-                📷
-            </div>
-
+        <div class="scanner-illustration">
+            ▣
         </div>
 
-
-        <h3>
-            Ready to Scan
-        </h3>
+        <h3>Scan Product</h3>
 
         <p>
-            Align the QR / SKU code inside
-            the frame.
+            Allow camera access and point it
+            toward the product QR/barcode.
         </p>
-
 
         <button
             class="primary-btn"
             onclick="startScanner()"
         >
-            Start Scanner
+            📷 Start Camera
+        </button>
+
+        <button
+            class="secondary-btn"
+            onclick="stopScanner()"
+        >
+            Stop Camera
         </button>
 
     </div>
@@ -972,15 +761,14 @@
 
     <div
         id="scanResults"
-        class="results-area"
+        class="results-container"
     ></div>
 
 </section>
 
 
-
 <!-- =====================================================
-     INVENTORY PAGE
+     INVENTORY
 ===================================================== -->
 
 <section
@@ -992,21 +780,23 @@
 
         <div>
 
-            <h1>
-                Inventory
-            </h1>
+            <span class="eyebrow">
+                STOCK MANAGEMENT
+            </span>
+
+            <h1>Inventory</h1>
 
             <p>
-                Manage all products
+                Search and manage your products.
             </p>
 
         </div>
 
         <button
-            class="primary-btn"
+            class="round-add"
             onclick="openPage('addProductPage')"
         >
-            + Add
+            +
         </button>
 
     </div>
@@ -1014,14 +804,12 @@
 
     <div class="search-box">
 
-        <span>
-            🔎
-        </span>
+        <span>⌕</span>
 
         <input
             id="inventorySearch"
             oninput="searchInventory()"
-            placeholder="Search name, SKU, colour..."
+            placeholder="Search product, SKU, colour..."
         >
 
     </div>
@@ -1029,15 +817,21 @@
 
     <div class="filter-row">
 
-        <button class="filter-btn active">
+        <button
+            class="filter-btn active"
+        >
             All
         </button>
 
-        <button class="filter-btn">
+        <button
+            class="filter-btn"
+        >
             Low Stock
         </button>
 
-        <button class="filter-btn">
+        <button
+            class="filter-btn"
+        >
             Out of Stock
         </button>
 
@@ -1046,11 +840,53 @@
 
     <div
         id="inventoryList"
-        class="inventory-list"
+        class="list-container"
     ></div>
 
 </section>
 
+
+<!-- =====================================================
+     LOW STOCK
+===================================================== -->
+
+<section
+    id="lowStockPage"
+    class="page"
+>
+
+    <div class="page-heading">
+
+        <button
+            class="back-btn"
+            onclick="openPage('homePage')"
+        >
+            ←
+        </button>
+
+        <div>
+
+            <span class="eyebrow">
+                ALERTS
+            </span>
+
+            <h1>Low Stock</h1>
+
+            <p>
+                Products that need attention.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="lowStockList"
+        class="list-container"
+    ></div>
+
+</section>
 
 
 <!-- =====================================================
@@ -1073,12 +909,14 @@
 
         <div>
 
-            <h1>
-                AI Set Maker
-            </h1>
+            <span class="eyebrow">
+                AI FEATURE
+            </span>
+
+            <h1>AI Set Maker</h1>
 
             <p>
-                Find the closest inventory match
+                Find matching inventory from a saree image.
             </p>
 
         </div>
@@ -1089,211 +927,122 @@
     <div class="ai-hero">
 
         <div class="ai-symbol">
-            ✨
+            ✦
         </div>
 
-        <h2>
-            Smart Saree Matching
-        </h2>
+        <h2>Smart Colour Matching</h2>
 
         <p>
-            Upload a saree image. The AI will
-            detect its colour and match it with
-            available inventory.
+            Upload a saree photo. The app detects
+            its dominant colour and searches your
+            inventory for the closest available
+            colour variants.
         </p>
-
-    </div>
-
-
-    <div class="upload-card">
-
-        <div class="upload-icon">
-            👗
-        </div>
-
-        <h3>
-            Upload Saree Image
-        </h3>
-
-        <p>
-            JPG, PNG or WEBP
-        </p>
-
-
-        <input
-            id="sareeImage"
-            type="file"
-            accept="image/*"
-            hidden
-        >
-
-
-        <label
-            for="sareeImage"
-            class="primary-btn"
-        >
-            Choose Saree Image
-        </label>
-
-    </div>
-
-
-    <div class="design-selection">
-
-        <h3>
-            Select Designs
-        </h3>
-
-
-        <div class="design-grid">
-
-            <button
-                class="design-card selected"
-            >
-                Design 1
-            </button>
-
-            <button
-                class="design-card"
-            >
-                Design 2
-            </button>
-
-            <button
-                class="design-card"
-            >
-                Design 3
-            </button>
-
-            <button
-                class="design-card"
-            >
-                Design 4
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <button
-        class="primary-btn full-btn"
-        onclick="analyzeSaree()"
-    >
-        ✨ Find Matching Inventory
-    </button>
-
-
-    <div
-        id="setMakerResults"
-        class="results-area"
-    ></div>
-
-</section>
-
-
-
-<!-- =====================================================
-     BILL PAGE
-===================================================== -->
-
-<section
-    id="billPage"
-    class="page"
->
-
-    <div class="page-heading">
-
-        <div>
-
-            <h1>
-                Parcha / Bill
-            </h1>
-
-            <p>
-                Create customer sale bill
-            </p>
-
-        </div>
 
     </div>
 
 
     <div class="form-card">
 
+        <label class="upload-area">
 
-        <label>
-            Customer Name
+            <div class="upload-icon">
+                ↑
+            </div>
+
+            <strong>
+                Upload Saree Image
+            </strong>
+
+            <small>
+                JPG, PNG or WEBP
+            </small>
+
+            <input
+                id="sareeImage"
+                type="file"
+                accept="image/*"
+                hidden
+            >
+
         </label>
 
-        <input
-            id="customerName"
-            placeholder="Walk-in Customer"
-        >
+
+        <div class="section-title">
+
+            <h3>Select Designs</h3>
+
+            <span>
+                Up to 4 designs
+            </span>
+
+        </div>
 
 
-        <label>
-            Select Product
-        </label>
+        <div class="design-grid">
 
-        <select id="billProduct">
-
-            <option value="">
-                Select product
-            </option>
-
-        </select>
+            <button
+                class="design-card selected"
+                type="button"
+            >
+                <span>01</span>
+                Design 1
+            </button>
 
 
-        <label>
-            Quantity
-        </label>
-
-        <input
-            id="billQuantity"
-            type="number"
-            min="1"
-            value="1"
-        >
+            <button
+                class="design-card"
+                type="button"
+            >
+                <span>02</span>
+                Design 2
+            </button>
 
 
-        <label>
-            Discount (₹)
-        </label>
+            <button
+                class="design-card"
+                type="button"
+            >
+                <span>03</span>
+                Design 3
+            </button>
 
-        <input
-            id="billDiscount"
-            type="number"
-            min="0"
-            value="0"
-        >
+
+            <button
+                class="design-card"
+                type="button"
+            >
+                <span>04</span>
+                Design 4
+            </button>
+
+        </div>
 
 
         <button
-            class="primary-btn full-btn"
-            onclick="createBill()"
+            class="primary-btn full"
+            onclick="analyzeSaree()"
         >
-            🧾 Create Bill
+            ✦ Find Matching Inventory
         </button>
 
     </div>
 
 
     <div
-        id="billPreview"
-        class="results-area"
+        id="setMakerResults"
+        class="results-container"
     ></div>
 
 </section>
 
 
-
 <!-- =====================================================
-     LOW STOCK PAGE
+     BILL
 ===================================================== -->
 
 <section
-    id="lowStockPage"
+    id="billPage"
     class="page"
 >
 
@@ -1308,48 +1057,110 @@
 
         <div>
 
-            <h1>
-                Low Stock Alerts
-            </h1>
+            <span class="eyebrow">
+                SALES
+            </span>
+
+            <h1>Bill / Parcha</h1>
 
             <p>
-                Products that need attention
+                Create sale bill and deduct stock.
             </p>
 
         </div>
+
+    </div>
+
+
+    <div class="form-card">
+
+        <div class="input-group">
+
+            <label>Customer Name</label>
+
+            <input
+                id="customerName"
+                placeholder="Walk-in Customer"
+            >
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>Product</label>
+
+            <select id="billProduct">
+                <option value="">
+                    Select product
+                </option>
+            </select>
+
+        </div>
+
+
+        <div class="form-grid">
+
+            <div class="input-group">
+
+                <label>Quantity</label>
+
+                <input
+                    id="billQuantity"
+                    type="number"
+                    min="1"
+                    value="1"
+                    oninput="calculateBillPreview()"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Discount ₹</label>
+
+                <input
+                    id="billDiscount"
+                    type="number"
+                    min="0"
+                    value="0"
+                    oninput="calculateBillPreview()"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="billCalculation"
+            class="bill-calculation"
+        >
+            Select product to calculate.
+        </div>
+
+
+        <button
+            class="primary-btn full"
+            onclick="createBill()"
+        >
+            🧾 Create Bill
+        </button>
 
     </div>
 
 
     <div
-        id="lowStockList"
-        class="inventory-list"
-    >
-
-        <div class="empty-state">
-
-            <div>
-                ✅
-            </div>
-
-            <h3>
-                No low-stock products
-            </h3>
-
-            <p>
-                Your inventory is healthy.
-            </p>
-
-        </div>
-
-    </div>
+        id="billPreview"
+        class="results-container"
+    ></div>
 
 </section>
 
 
-
 <!-- =====================================================
-     MORE PAGE
+     MORE
 ===================================================== -->
 
 <section
@@ -1361,12 +1172,14 @@
 
         <div>
 
-            <h1>
-                More
-            </h1>
+            <span class="eyebrow">
+                SETTINGS
+            </span>
+
+            <h1>More</h1>
 
             <p>
-                Settings and account
+                Account and app options.
             </p>
 
         </div>
@@ -1376,162 +1189,92 @@
 
     <div class="settings-list">
 
-
         <button
-            class="setting-item"
             onclick="openProfile()"
+            class="settings-item"
         >
-
-            <span>
-                👤
-            </span>
+            <span>👤</span>
 
             <div>
-
-                <strong>
-                    My Account
-                </strong>
-
+                <strong>Profile</strong>
                 <small>
-                    Mobile & Gmail
+                    Account information
                 </small>
-
             </div>
 
-            <b>
-                →
-            </b>
-
+            <b>›</b>
         </button>
 
 
         <button
-            class="setting-item"
+            onclick="openPage('lowStockPage')"
+            class="settings-item"
         >
-
-            <span>
-                ⚙️
-            </span>
+            <span>⚠️</span>
 
             <div>
-
-                <strong>
-                    App Settings
-                </strong>
-
+                <strong>Low Stock</strong>
                 <small>
-                    Manage application settings
+                    Check stock alerts
                 </small>
-
             </div>
 
-            <b>
-                →
-            </b>
-
+            <b>›</b>
         </button>
 
 
         <button
-            class="setting-item"
+            onclick="exportInventory()"
+            class="settings-item"
         >
-
-            <span>
-                🔔
-            </span>
+            <span>⇩</span>
 
             <div>
-
-                <strong>
-                    Notifications
-                </strong>
-
+                <strong>Export Inventory</strong>
                 <small>
-                    Stock alerts and updates
+                    Download CSV backup
                 </small>
-
             </div>
 
-            <b>
-                →
-            </b>
-
+            <b>›</b>
         </button>
 
 
         <button
-            class="setting-item logout-item"
             onclick="logout()"
+            class="settings-item danger"
         >
-
-            <span>
-                🚪
-            </span>
+            <span>↪</span>
 
             <div>
-
-                <strong>
-                    Logout
-                </strong>
-
+                <strong>Logout</strong>
                 <small>
-                    Sign out of Smart Inventory
+                    Sign out from this device
                 </small>
-
             </div>
 
-            <b>
-                →
-            </b>
-
+            <b>›</b>
         </button>
-
-    </div>
-
-
-    <div class="app-brand-card">
-
-        <div class="brand-logo large">
-            SI
-        </div>
-
-        <h2>
-            Smart Inventory
-        </h2>
-
-        <p>
-            Manage Smarter. Grow Faster.
-        </p>
 
     </div>
 
 </section>
 
-
 </main>
 
 
-
 <!-- =====================================================
-     BOTTOM NAVIGATION
+     BOTTOM NAV
 ===================================================== -->
 
 <nav class="bottom-nav">
-
 
     <button
         class="nav-item active"
         onclick="openPage('homePage', this)"
     >
-
-        <span>
-            🏠
-        </span>
-
-        <small>
-            Home
-        </small>
-
+        <span>⌂</span>
+        <small>Home</small>
     </button>
 
 
@@ -1539,31 +1282,17 @@
         class="nav-item"
         onclick="openPage('inventoryPage', this)"
     >
-
-        <span>
-            📦
-        </span>
-
-        <small>
-            Inventory
-        </small>
-
+        <span>▦</span>
+        <small>Inventory</small>
     </button>
 
 
     <button
-        class="nav-item"
+        class="nav-item center"
         onclick="openPage('aiSetMakerPage', this)"
     >
-
-        <span>
-            ✨
-        </span>
-
-        <small>
-            AI Set Maker
-        </small>
-
+        <span>✦</span>
+        <small>AI</small>
     </button>
 
 
@@ -1571,15 +1300,8 @@
         class="nav-item"
         onclick="openPage('billPage', this)"
     >
-
-        <span>
-            🧾
-        </span>
-
-        <small>
-            Parcha
-        </small>
-
+        <span>₹</span>
+        <small>Bill</small>
     </button>
 
 
@@ -1587,27 +1309,14 @@
         class="nav-item"
         onclick="openPage('morePage', this)"
     >
-
-        <span>
-            ☰
-        </span>
-
-        <small>
-            More
-        </small>
-
+        <span>☰</span>
+        <small>More</small>
     </button>
 
 </nav>
 
-
 </div>
 
-
-
-<!-- =====================================================
-     JAVASCRIPT
-===================================================== -->
 
 <script src="app.js"></script>
 
