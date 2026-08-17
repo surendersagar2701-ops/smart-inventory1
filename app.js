@@ -1,3959 +1,1093 @@
 /* =========================================================
-   SMART INVENTORY
-   FINAL FRONTEND ENGINE
-========================================================= */
+   SMART INVENTORY APP — app.js
+   ========================================================= */
 
 "use strict";
 
+/* ---------- APP STATE ---------- */
 
-/* =========================================================
-   STORAGE
-========================================================= */
-
-const STORAGE_PRODUCTS =
-    "smart_inventory_products_v2";
-
-const STORAGE_SALES =
-    "smart_inventory_sales_v2";
-
-const STORAGE_USER =
-    "smart_inventory_user_v2";
+const state = {
+    products: JSON.parse(localStorage.getItem("inventory_products") || "[]"),
+    cart: [],
+    currentUser: JSON.parse(localStorage.getItem("inventory_user") || "null"),
+    discount: 0,
+    discountType: "percent"
+};
 
 
-let inventory =
-    JSON.parse(
-        localStorage.getItem(
-            STORAGE_PRODUCTS
-        ) || "[]"
-    );
+/* ---------- HELPERS ---------- */
 
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
 
-let sales =
-    JSON.parse(
-        localStorage.getItem(
-            STORAGE_SALES
-        ) || "[]"
-    );
-
-
-let currentUser =
-    JSON.parse(
-        localStorage.getItem(
-            STORAGE_USER
-        ) || "null"
-    );
-
-
-const LOW_STOCK_LIMIT = 5;
-
-let otp = null;
-
-let selectedDesigns = [0];
-
-let selectedAIFile = null;
-
-let scannedProducts = [];
-
-let scannerStream = null;
-
-let scannerVideo = null;
-
-let scannerTimer = null;
-
-
-/* =========================================================
-   INITIALIZE
-========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    initialize
-);
-
-
-function initialize() {
-
-    if (currentUser) {
-
-        showApp();
-
-    } else {
-
-        showLogin();
-
-    }
-
-    setupEvents();
-
-    updateAll();
-
+function saveProducts() {
+    localStorage.setItem("inventory_products", JSON.stringify(state.products));
 }
 
+function saveUser() {
+    localStorage.setItem("inventory_user", JSON.stringify(state.currentUser));
+}
 
-/* =========================================================
-   EVENT SETUP
-========================================================= */
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
 
-function setupEvents() {
+function money(value) {
+    return "₹" + Number(value || 0).toFixed(2);
+}
 
-    const form =
-        document.getElementById(
-            "productForm"
-        );
-
-    if (form) {
-
-        form.addEventListener(
-            "submit",
-            addProduct
-        );
-    }
-
-
-    const file =
-        document.getElementById(
-            "aiFile"
-        );
-
-    if (file) {
-
-        file.addEventListener(
-            "change",
-            handleImportFile
-        );
-    }
-
-
-    const image =
-        document.getElementById(
-            "sareeImage"
-        );
-
-    if (image) {
-
-        image.addEventListener(
-            "change",
-            event => {
-
-                selectedAIFile =
-                    event.target.files[0] ||
-                    null;
-
-            }
-        );
-    }
-
-
-    const billProduct =
-        document.getElementById(
-            "billProduct"
-        );
-
-    if (billProduct) {
-
-        billProduct.addEventListener(
-            "change",
-            calculateBillPreview
-        );
-    }
-
-
-    document
-        .querySelectorAll(
-            ".design-card"
-        )
-        .forEach(
-            (button, index) => {
-
-                button.addEventListener(
-                    "click",
-                    () =>
-                        toggleDesign(
-                            index,
-                            button
-                        )
-                );
-
-            }
-        );
-
-
-    document
-        .querySelectorAll(
-            ".filter-btn"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        document
-                            .querySelectorAll(
-                                ".filter-btn"
-                            )
-                            .forEach(
-                                b =>
-                                    b.classList.remove(
-                                        "active"
-                                    )
-                            );
-
-                        button.classList.add(
-                            "active"
-                        );
-
-                        filterInventory(
-                            button.textContent
-                                .trim()
-                        );
-
-                    }
-                );
-
-            }
-        );
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 
 /* =========================================================
    LOGIN
-========================================================= */
+   Mobile + OTP OR Gmail
+   ========================================================= */
 
-function showLogin() {
+function initLogin() {
 
-    document
-        .getElementById(
-            "loginScreen"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
+    const loginForm = $("#loginForm");
 
-    document
-        .getElementById(
-            "app"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-}
+    if (!loginForm) return;
 
+    loginForm.addEventListener("submit", function (e) {
+        e.preventDefault();
 
-function showApp() {
+        const mobile = $("#mobile");
+        const email = $("#email");
 
-    document
-        .getElementById(
-            "loginScreen"
-        )
-        ?.classList.add(
-            "hidden"
-        );
+        const mobileValue = mobile ? mobile.value.trim() : "";
+        const emailValue = email ? email.value.trim() : "";
 
-    document
-        .getElementById(
-            "app"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
+        if (!mobileValue && !emailValue) {
+            alert("Mobile number ya Gmail enter karo.");
+            return;
+        }
 
-    updateUserInfo();
+        if (mobileValue && mobileValue.length < 10) {
+            alert("Valid mobile number enter karo.");
+            return;
+        }
 
-    openPage(
-        "homePage"
-    );
-}
-
-
-/* =========================================================
-   OTP
-========================================================= */
-
-function sendOTP() {
-
-    const input =
-        document.getElementById(
-            "mobileNumber"
-        );
-
-    const mobile =
-        input?.value.trim();
-
-
-    if (!/^[0-9]{10}$/.test(mobile)) {
-
-        alert(
-            "Please enter a valid 10 digit mobile number."
-        );
-
-        return;
-    }
-
-
-    otp =
-        String(
-            Math.floor(
-                100000 +
-                Math.random() *
-                900000
-            )
-        );
-
-
-    document
-        .getElementById(
-            "mobileLogin"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "otpLogin"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
-
-
-    alert(
-        "Demo OTP: " +
-        otp +
-        "\n\nReal SMS OTP requires Firebase/backend."
-    );
-}
-
-
-function verifyOTP() {
-
-    const entered =
-        document
-            .getElementById(
-                "otpInput"
-            )
-            ?.value.trim();
-
-
-    if (
-        !otp ||
-        entered !== otp
-    ) {
-
-        alert(
-            "Incorrect OTP."
-        );
-
-        return;
-    }
-
-
-    document
-        .getElementById(
-            "otpLogin"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "gmailLogin"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
-}
-
-
-function backToMobile() {
-
-    document
-        .getElementById(
-            "otpLogin"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-
-    document
-        .getElementById(
-            "mobileLogin"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
-}
-
-
-function loginWithGmail() {
-
-    const gmail =
-        document
-            .getElementById(
-                "gmailInput"
-            )
-            ?.value.trim();
-
-
-    if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
-            .test(gmail)
-    ) {
-
-        alert(
-            "Enter a valid Gmail address."
-        );
-
-        return;
-    }
-
-
-    const mobile =
-        document
-            .getElementById(
-                "mobileNumber"
-            )
-            ?.value.trim();
-
-
-    currentUser = {
-
-        mobile,
-
-        gmail,
-
-        loginAt:
-            new Date().toISOString()
-
-    };
-
-
-    localStorage.setItem(
-        STORAGE_USER,
-        JSON.stringify(
-            currentUser
-        )
-    );
-
-
-    showApp();
-}
-
-
-function logout() {
-
-    if (
-        !confirm(
-            "Logout from this device?"
-        )
-    ) {
-
-        return;
-    }
-
-
-    localStorage.removeItem(
-        STORAGE_USER
-    );
-
-
-    currentUser = null;
-
-    otp = null;
-
-    showLogin();
-
-
-    document
-        .getElementById(
-            "mobileLogin"
-        )
-        ?.classList.remove(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "otpLogin"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-
-
-    document
-        .getElementById(
-            "gmailLogin"
-        )
-        ?.classList.add(
-            "hidden"
-        );
-}
-
-
-function updateUserInfo() {
-
-    return;
-}
-
-
-function openProfile() {
-
-    if (!currentUser) {
-
-        return;
-    }
-
-
-    alert(
-        "Smart Inventory Profile\n\n" +
-        "Mobile: " +
-        currentUser.mobile +
-        "\nGmail: " +
-        currentUser.gmail
-    );
-}
-
-
-/* =========================================================
-   NAVIGATION
-========================================================= */
-
-function openPage(
-    pageId,
-    clickedButton = null
-) {
-
-    document
-        .querySelectorAll(
-            ".page"
-        )
-        .forEach(
-            page =>
-                page.classList.remove(
-                    "active"
-                )
-        );
-
-
-    document
-        .getElementById(
-            pageId
-        )
-        ?.classList.add(
-            "active"
-        );
-
-
-    if (clickedButton) {
-
-        document
-            .querySelectorAll(
-                ".nav-item"
-            )
-            .forEach(
-                item =>
-                    item.classList.remove(
-                        "active"
-                    )
-            );
-
-        clickedButton.classList.add(
-            "active"
-        );
-    }
-
-
-    if (
-        pageId ===
-        "inventoryPage"
-    ) {
-
-        renderInventory(
-            inventory
-        );
-    }
-
-
-    if (
-        pageId ===
-        "billPage"
-    ) {
-
-        updateBillProducts();
-
-        calculateBillPreview();
-    }
-
-
-    if (
-        pageId ===
-        "lowStockPage"
-    ) {
-
-        renderLowStock();
-    }
-
-
-    window.scrollTo(
-        0,
-        0
-    );
-}
-
-
-/* =========================================================
-   PRODUCT ADD
-========================================================= */
-
-function addProduct(event) {
-
-    event.preventDefault();
-
-
-    const value =
-        id =>
-            document
-                .getElementById(
-                    id
-                )
-                ?.value.trim() ||
-            "";
-
-
-    const productName =
-        value(
-            "productName"
-        );
-
-
-    const sku =
-        value(
-            "productSKU"
-        );
-
-
-    if (
-        !productName ||
-        !sku
-    ) {
-
-        alert(
-            "Product Name and SKU are required."
-        );
-
-        return;
-    }
-
-
-    const duplicate =
-        inventory.some(
-            product =>
-                product.sku
-                    .toLowerCase() ===
-                sku.toLowerCase()
-        );
-
-
-    if (duplicate) {
-
-        alert(
-            "This SKU already exists."
-        );
-
-        return;
-    }
-
-
-    const product = {
-
-        id:
-            crypto.randomUUID
-                ? crypto.randomUUID()
-                : Date.now().toString(),
-
-        name:
-            productName,
-
-        sku,
-
-        category:
-            value(
-                "productCategory"
-            ),
-
-        colour:
-            value(
-                "productColour"
-            ),
-
-        size:
-            value(
-                "productSize"
-            ),
-
-        quantity:
-            numberValue(
-                "productQuantity"
-            ),
-
-        purchasePrice:
-            numberValue(
-                "purchasePrice"
-            ),
-
-        sellingPrice:
-            numberValue(
-                "sellingPrice"
-            ),
-
-        notes:
-            value(
-                "productNotes"
-            ),
-
-        createdAt:
-            new Date().toISOString()
-
-    };
-
-
-    inventory.push(
-        product
-    );
-
-
-    saveProducts();
-
-    updateAll();
-
-
-    document
-        .getElementById(
-            "productForm"
-        )
-        ?.reset();
-
-
-    document
-        .getElementById(
-            "productQuantity"
-        )
-        .value = 0;
-
-
-    alert(
-        "Product added successfully."
-    );
-
-
-    openPage(
-        "inventoryPage"
-    );
-}
-
-
-function numberValue(id) {
-
-    return (
-        Number(
-            document
-                .getElementById(
-                    id
-                )
-                ?.value
-        ) || 0
-    );
-}
-
-
-function saveProducts() {
-
-    localStorage.setItem(
-        STORAGE_PRODUCTS,
-        JSON.stringify(
-            inventory
-        )
-    );
-}
-
-
-/* =========================================================
-   INVENTORY
-========================================================= */
-
-function renderInventory(
-    products
-) {
-
-    const container =
-        document.getElementById(
-            "inventoryList"
-        );
-
-
-    if (!container) {
-
-        return;
-    }
-
-
-    if (!products.length) {
-
-        container.innerHTML = `
-            <div class="empty-state">
-
-                <div>📦</div>
-
-                <h3>No products found</h3>
-
-                <p>
-                    Add products to your inventory.
-                </p>
-
-            </div>
-        `;
-
-        return;
-    }
-
-
-    container.innerHTML =
-        products
-            .map(
-                product =>
-                    productHTML(
-                        product
-                    )
-            )
-            .join("");
-}
-
-
-function productHTML(
-    product
-) {
-
-    const low =
-        Number(
-            product.quantity
-        ) <= LOW_STOCK_LIMIT;
-
-
-    return `
-
-        <div class="product-item">
-
-            <div class="product-item-header">
-
-                <div>
-
-                    <h3>
-                        ${safe(
-                            product.name
-                        )}
-                    </h3>
-
-                    <small>
-                        SKU:
-                        ${safe(
-                            product.sku
-                        )}
-                    </small>
-
-                </div>
-
-
-                <button
-                    class="small-main-btn"
-                    onclick="editStock('${product.id}')"
-                >
-                    Update
-                </button>
-
-            </div>
-
-
-            <div class="product-item-info">
-
-                <div class="info-box">
-
-                    <small>
-                        Category
-                    </small>
-
-                    <strong>
-                        ${safe(
-                            product.category ||
-                            "-"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="info-box">
-
-                    <small>
-                        Colour
-                    </small>
-
-                    <strong>
-                        ${safe(
-                            product.colour ||
-                            "-"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="info-box">
-
-                    <small>
-                        Size
-                    </small>
-
-                    <strong>
-                        ${safe(
-                            product.size ||
-                            "-"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="info-box">
-
-                    <small>
-                        Stock
-                    </small>
-
-                    <strong
-                        class="${
-                            low
-                                ? "stock-low"
-                                : "stock-good"
-                        }"
-                    >
-                        ${product.quantity}
-                        ${
-                            low
-                                ? " ⚠️"
-                                : ""
-                        }
-                    </strong>
-
-                </div>
-
-
-                <div class="info-box">
-
-                    <small>
-                        Purchase
-                    </small>
-
-                    <strong>
-                        ₹${money(
-                            product.purchasePrice
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="info-box">
-
-                    <small>
-                        Selling
-                    </small>
-
-                    <strong>
-                        ₹${money(
-                            product.sellingPrice
-                        )}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <button
-                onclick="deleteProduct('${product.id}')"
-                style="
-                    margin-top:15px;
-                    border:0;
-                    background:transparent;
-                    color:#dc3545;
-                    font-weight:700;
-                "
-            >
-                Delete Product
-            </button>
-
-        </div>
-
-    `;
-}
-
-
-function searchInventory() {
-
-    const query =
-        document
-            .getElementById(
-                "inventorySearch"
-            )
-            ?.value
-            .toLowerCase()
-            .trim() ||
-        "";
-
-
-    const filtered =
-        inventory.filter(
-            product =>
-
-                product.name
-                    .toLowerCase()
-                    .includes(
-                        query
-                    ) ||
-
-                product.sku
-                    .toLowerCase()
-                    .includes(
-                        query
-                    ) ||
-
-                String(
-                    product.colour
-                )
-                    .toLowerCase()
-                    .includes(
-                        query
-                    ) ||
-
-                String(
-                    product.category
-                )
-                    .toLowerCase()
-                    .includes(
-                        query
-                    ) ||
-
-                String(
-                    product.size
-                )
-                    .toLowerCase()
-                    .includes(
-                        query
-                    )
-        );
-
-
-    renderInventory(
-        filtered
-    );
-}
-
-
-function filterInventory(
-    type
-) {
-
-    let filtered =
-        [...inventory];
-
-
-    if (
-        type ===
-        "Low Stock"
-    ) {
-
-        filtered =
-            filtered.filter(
-                product =>
-                    Number(
-                        product.quantity
-                    ) <=
-                    LOW_STOCK_LIMIT
-            );
-    }
-
-
-    if (
-        type ===
-        "Out of Stock"
-    ) {
-
-        filtered =
-            filtered.filter(
-                product =>
-                    Number(
-                        product.quantity
-                    ) === 0
-            );
-    }
-
-
-    renderInventory(
-        filtered
-    );
-}
-
-
-function editStock(
-    id
-) {
-
-    const product =
-        inventory.find(
-            p =>
-                p.id === id
-        );
-
-
-    if (!product) {
-
-        return;
-    }
-
-
-    const value =
-        prompt(
-            "Enter new stock quantity:",
-            product.quantity
-        );
-
-
-    if (value === null) {
-
-        return;
-    }
-
-
-    const quantity =
-        Number(
-            value
-        );
-
-
-    if (
-        !Number.isFinite(
-            quantity
-        ) ||
-        quantity < 0
-    ) {
-
-        alert(
-            "Enter a valid quantity."
-        );
-
-        return;
-    }
-
-
-    product.quantity =
-        quantity;
-
-
-    saveProducts();
-
-    updateAll();
-}
-
-
-function deleteProduct(
-    id
-) {
-
-    const product =
-        inventory.find(
-            p =>
-                p.id === id
-        );
-
-
-    if (!product) {
-
-        return;
-    }
-
-
-    if (
-        !confirm(
-            `Delete ${product.name}?`
-        )
-    ) {
-
-        return;
-    }
-
-
-    inventory =
-        inventory.filter(
-            p =>
-                p.id !== id
-        );
-
-
-    saveProducts();
-
-    updateAll();
-}
-
-
-/* =========================================================
-   DASHBOARD
-========================================================= */
-
-function updateDashboard() {
-
-    const totalProducts =
-        document.getElementById(
-            "totalProducts"
-        );
-
-
-    const totalStock =
-        document.getElementById(
-            "totalStock"
-        );
-
-
-    const lowStock =
-        document.getElementById(
-            "lowStock"
-        );
-
-
-    const todaySale =
-        document.getElementById(
-            "todaySale"
-        );
-
-
-    const stock =
-        inventory.reduce(
-            (
-                total,
-                product
-            ) =>
-                total +
-                Number(
-                    product.quantity ||
-                    0
-                ),
-            0
-        );
-
-
-    const low =
-        inventory.filter(
-            product =>
-                Number(
-                    product.quantity ||
-                    0
-                ) <=
-                LOW_STOCK_LIMIT
-        ).length;
-
-
-    const today =
-        new Date()
-            .toDateString();
-
-
-    const sale =
-        sales
-            .filter(
-                item =>
-                    new Date(
-                        item.date
-                    ).toDateString() ===
-                    today
-            )
-            .reduce(
-                (
-                    total,
-                    item
-                ) =>
-                    total +
-                    Number(
-                        item.total ||
-                        0
-                    ),
-                0
-            );
-
-
-    if (totalProducts) {
-
-        totalProducts.textContent =
-            inventory.length;
-    }
-
-
-    if (totalStock) {
-
-        totalStock.textContent =
-            stock;
-    }
-
-
-    if (lowStock) {
-
-        lowStock.textContent =
-            low;
-    }
-
-
-    if (todaySale) {
-
-        todaySale.textContent =
-            "₹" +
-            money(
-                sale
-            );
-    }
-}
-
-
-/* =========================================================
-   LOW STOCK
-========================================================= */
-
-function renderLowStock() {
-
-    const products =
-        inventory.filter(
-            product =>
-                Number(
-                    product.quantity
-                ) <=
-                LOW_STOCK_LIMIT
-        );
-
-
-    const home =
-        document.getElementById(
-            "homeLowStock"
-        );
-
-
-    const page =
-        document.getElementById(
-            "lowStockList"
-        );
-
-
-    const html =
-        products.length
-            ? products
-                .map(
-                    product =>
-                        productHTML(
-                            product
-                        )
-                )
-                .join("")
-            : `
-                <div class="empty-state">
-
-                    <div>✓</div>
-
-                    <h3>
-                        Stock is healthy
-                    </h3>
-
-                    <p>
-                        No low-stock products.
-                    </p>
-
-                </div>
-            `;
-
-
-    if (home) {
-
-        home.innerHTML =
-            html;
-    }
-
-
-    if (page) {
-
-        page.innerHTML =
-            html;
-    }
-}
-
-
-/* =========================================================
-   BULK IMPORT
-========================================================= */
-
-function handleImportFile(
-    event
-) {
-
-    const file =
-        event.target.files[0];
-
-
-    if (!file) {
-
-        return;
-    }
-
-
-    selectedAIFile =
-        file;
-
-
-    if (
-        file.name
-            .toLowerCase()
-            .endsWith(
-                ".csv"
-            )
-    ) {
-
-        parseCSV(
-            file
-        );
-
-    } else {
-
-        showImportMessage(
-            "File selected. CSV parsing is available directly. For image/PDF/Excel AI extraction, connect an AI/backend service."
-        );
-    }
-}
-
-
-function parseCSV(
-    file
-) {
-
-    const reader =
-        new FileReader();
-
-
-    reader.onload =
-        event => {
-
-            const text =
-                event.target.result;
-
-
-            const rows =
-                text
-                    .split(/\r?\n/)
-                    .filter(
-                        row =>
-                            row.trim()
-                    );
-
-
-            if (
-                rows.length < 2
-            ) {
-
-                showImportMessage(
-                    "No usable records found."
-                );
-
-                return;
-            }
-
-
-            const headers =
-                splitCSV(
-                    rows[0]
-                ).map(
-                    h =>
-                        h
-                            .toLowerCase()
-                            .trim()
-                );
-
-
-            const records =
-                rows
-                    .slice(1)
-                    .map(
-                        row => {
-
-                            const cells =
-                                splitCSV(
-                                    row
-                                );
-
-
-                            const get =
-                                (
-                                    names
-                                ) => {
-
-                                    const index =
-                                        headers.findIndex(
-                                            h =>
-                                                names.some(
-                                                    name =>
-                                                        h.includes(
-                                                            name
-                                                        )
-                                                )
-                                        );
-
-
-                                    return index >= 0
-                                        ? cells[
-                                            index
-                                        ] || ""
-                                        : "";
-                                };
-
-
-                            return {
-
-                                name:
-                                    get(
-                                        [
-                                            "product name",
-                                            "product",
-                                            "name"
-                                        ]
-                                    ),
-
-                                sku:
-                                    get(
-                                        [
-                                            "sku",
-                                            "code"
-                                        ]
-                                    ),
-
-                                category:
-                                    get(
-                                        [
-                                            "category"
-                                        ]
-                                    ),
-
-                                colour:
-                                    get(
-                                        [
-                                            "colour",
-                                            "color"
-                                        ]
-                                    ),
-
-                                size:
-                                    get(
-                                        [
-                                            "size"
-                                        ]
-                                    ),
-
-                                quantity:
-                                    Number(
-                                        get(
-                                            [
-                                                "quantity",
-                                                "stock",
-                                                "qty"
-                                            ]
-                                        )
-                                    ) || 0,
-
-                                purchasePrice:
-                                    Number(
-                                        get(
-                                            [
-                                                "purchase",
-                                                "buy"
-                                            ]
-                                        )
-                                    ) || 0,
-
-                                sellingPrice:
-                                    Number(
-                                        get(
-                                            [
-                                                "selling",
-                                                "sale",
-                                                "price"
-                                            ]
-                                        )
-                                    ) || 0
-
-                            };
-
-                        }
-                    )
-                    .filter(
-                        record =>
-                            record.name ||
-                            record.sku
-                    );
-
-
-            window.pendingImport =
-                records;
-
-
-            renderImportPreview(
-                records
-            );
+        state.currentUser = {
+            mobile: mobileValue,
+            email: emailValue,
+            loginTime: new Date().toISOString()
         };
 
+        saveUser();
 
-    reader.readAsText(
-        file
-    );
-}
+        alert("Login successful!");
 
+        showApp();
+    });
 
-function splitCSV(
-    line
-) {
+    const otpButton = $("#sendOtp");
 
-    const result = [];
+    if (otpButton) {
+        otpButton.addEventListener("click", function () {
 
-    let current = "";
+            const mobile = $("#mobile")?.value.trim();
 
-    let quote = false;
-
-
-    for (
-        let i = 0;
-        i < line.length;
-        i++
-    ) {
-
-        const char =
-            line[i];
-
-
-        if (
-            char ===
-            '"'
-        ) {
-
-            quote =
-                !quote;
-
-            continue;
-        }
-
-
-        if (
-            char === "," &&
-            !quote
-        ) {
-
-            result.push(
-                current.trim()
-            );
-
-            current = "";
-
-        } else {
-
-            current +=
-                char;
-        }
-    }
-
-
-    result.push(
-        current.trim()
-    );
-
-
-    return result;
-}
-
-
-function renderImportPreview(
-    records
-) {
-
-    const result =
-        document.getElementById(
-            "aiResults"
-        );
-
-
-    if (!result) {
-
-        return;
-    }
-
-
-    if (!records.length) {
-
-        showImportMessage(
-            "No complete records were detected."
-        );
-
-        return;
-    }
-
-
-    result.innerHTML = `
-
-        <div class="form-card">
-
-            <h3>
-                ${records.length}
-                records detected
-            </h3>
-
-            <p
-                class="muted"
-                style="margin-top:8px"
-            >
-                Review the records before
-                adding them.
-            </p>
-
-
-            <div class="list-container">
-
-                ${
-                    records
-                        .slice(
-                            0,
-                            20
-                        )
-                        .map(
-                            record => `
-
-                                <div
-                                    class="product-item"
-                                >
-
-                                    <strong>
-                                        ${safe(
-                                            record.name
-                                        )}
-                                    </strong>
-
-                                    <small>
-                                        SKU:
-                                        ${safe(
-                                            record.sku
-                                        )}
-                                    </small>
-
-                                    <small>
-                                        Colour:
-                                        ${safe(
-                                            record.colour ||
-                                            "-"
-                                        )}
-                                    </small>
-
-                                    <small>
-                                        Stock:
-                                        ${record.quantity}
-                                    </small>
-
-                                </div>
-
-                            `
-                        )
-                        .join("")
-                }
-
-            </div>
-
-
-            <button
-                class="primary-btn full"
-                style="margin-top:18px"
-                onclick="addImportedProducts()"
-            >
-                ✓ Add All Records
-            </button>
-
-        </div>
-
-    `;
-}
-
-
-function showImportMessage(
-    message
-) {
-
-    const result =
-        document.getElementById(
-            "aiResults"
-        );
-
-
-    if (!result) {
-
-        return;
-    }
-
-
-    result.innerHTML = `
-
-        <div class="form-card">
-
-            <h3>
-                Import
-            </h3>
-
-            <p>
-                ${safe(
-                    message
-                )}
-            </p>
-
-        </div>
-
-    `;
-}
-
-
-function addImportedProducts() {
-
-    const records =
-        window.pendingImport ||
-        [];
-
-
-    let added = 0;
-
-    let duplicate = 0;
-
-    let incomplete = 0;
-
-
-    records.forEach(
-        record => {
-
-            if (
-                !record.name ||
-                !record.sku
-            ) {
-
-                incomplete++;
-
+            if (!mobile || mobile.length < 10) {
+                alert("Pehle valid mobile number enter karo.");
                 return;
             }
 
-
-            const exists =
-                inventory.some(
-                    product =>
-                        product.sku
-                            .toLowerCase() ===
-                        record.sku
-                            .toLowerCase()
-                );
-
-
-            if (exists) {
-
-                duplicate++;
-
-                return;
-            }
-
-
-            inventory.push({
-
-                id:
-                    Date.now()
-                    .toString() +
-                    Math.random(),
-
-                ...record,
-
-                createdAt:
-                    new Date()
-                        .toISOString()
-
-            });
-
-
-            added++;
-        }
-    );
-
-
-    saveProducts();
-
-    updateAll();
-
-
-    alert(
-        `${added} products added.\n` +
-        `${duplicate} duplicates skipped.\n` +
-        `${incomplete} incomplete records skipped.`
-    );
-
-
-    openPage(
-        "inventoryPage"
-    );
-}
-
-
-/* =========================================================
-   QR / BARCODE
-========================================================= */
-
-async function startScanner() {
-
-    const result =
-        document.getElementById(
-            "scanResults"
-        );
-
-
-    if (!result) {
-
-        return;
-    }
-
-
-    if (
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-    ) {
-
-        result.innerHTML = `
-            <div class="form-card">
-                <h3>
-                    Camera not available
-                </h3>
-
-                <p>
-                    Please use HTTPS GitHub Pages
-                    and allow camera access.
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-
-    if (
-        !("BarcodeDetector" in window)
-    ) {
-
-        result.innerHTML = `
-            <div class="form-card">
-
-                <h3>
-                    QR scanner not supported
-                </h3>
-
-                <p>
-                    Your current browser does not
-                    provide BarcodeDetector.
-                    Chrome on supported devices
-                    is recommended.
-                </p>
-
-            </div>
-        `;
-
-        return;
-    }
-
-
-    try {
-
-        scannerStream =
-            await navigator
-                .mediaDevices
-                .getUserMedia({
-
-                    video: {
-                        facingMode:
-                            {
-                                ideal:
-                                    "environment"
-                            }
-                    }
-
-                });
-
-
-        scannerVideo =
-            document.createElement(
-                "video"
-            );
-
-
-        scannerVideo.autoplay =
-            true;
-
-        scannerVideo.playsInline =
-            true;
-
-
-        scannerVideo.style.width =
-            "100%";
-
-        scannerVideo.style.borderRadius =
-            "18px";
-
-
-        result.innerHTML =
-            "";
-
-
-        result.appendChild(
-            scannerVideo
-        );
-
-
-        scannerVideo.srcObject =
-            scannerStream;
-
-
-        const detector =
-            new BarcodeDetector({
-
-                formats: [
-                    "qr_code",
-                    "code_128",
-                    "code_39",
-                    "ean_13",
-                    "ean_8"
-                ]
-
-            });
-
-
-        scannerTimer =
-            setInterval(
-                async () => {
-
-                    if (
-                        scannerVideo.readyState <
-                        2
-                    ) {
-
-                        return;
-                    }
-
-
-                    try {
-
-                        const codes =
-                            await detector.detect(
-                                scannerVideo
-                            );
-
-
-                        if (
-                            !codes.length
-                        ) {
-
-                            return;
-                        }
-
-
-                        const code =
-                            codes[0]
-                                .rawValue;
-
-
-                        stopScanner();
-
-
-                        processScannedSKU(
-                            code
-                        );
-
-                    }
-                    catch (
-                        error
-                    ) {
-
-                        console.log(
-                            error
-                        );
-
-                    }
-
-                },
-                500
-            );
-
-    }
-    catch (
-        error
-    ) {
-
-        result.innerHTML = `
-
-            <div class="form-card">
-
-                <h3>
-                    Camera permission denied
-                </h3>
-
-                <p>
-                    Allow camera access in
-                    browser settings and
-                    try again.
-                </p>
-
-            </div>
-
-        `;
-    }
-}
-
-
-function stopScanner() {
-
-    if (
-        scannerTimer
-    ) {
-
-        clearInterval(
-            scannerTimer
-        );
-
-        scannerTimer =
-            null;
-    }
-
-
-    if (
-        scannerStream
-    ) {
-
-        scannerStream
-            .getTracks()
-            .forEach(
-                track =>
-                    track.stop()
-            );
-
-        scannerStream =
-            null;
-    }
-
-
-    scannerVideo =
-        null;
-}
-
-
-function processScannedSKU(
-    code
-) {
-
-    const product =
-        inventory.find(
-            product =>
-                product.sku
-                    .toLowerCase() ===
-                String(
-                    code
-                )
-                    .toLowerCase()
-        );
-
-
-    const result =
-        document.getElementById(
-            "scanResults"
-        );
-
-
-    if (!product) {
-
-        result.innerHTML = `
-
-            <div class="form-card">
-
-                <h3>
-                    Product not found
-                </h3>
-
-                <p>
-                    Scanned SKU:
-                    <strong>
-                        ${safe(code)}
-                    </strong>
-                </p>
-
-                <button
-                    class="primary-btn"
-                    onclick="startScanner()"
-                >
-                    Scan Again
-                </button>
-
-            </div>
-
-        `;
-
-        return;
-    }
-
-
-    addScannedProduct(
-        product
-    );
-
-
-    renderScannedProducts();
-}
-
-
-function addScannedProduct(
-    product
-) {
-
-    const existing =
-        scannedProducts.find(
-            item =>
-                item.id ===
-                product.id
-        );
-
-
-    if (existing) {
-
-        existing.quantity++;
-
-    } else {
-
-        scannedProducts.push({
-
-            id:
-                product.id,
-
-            name:
-                product.name,
-
-            sku:
-                product.sku,
-
-            quantity:
-                1
-
+            alert("OTP verification system ke liye backend/API connect karna hoga.");
         });
     }
 }
 
 
-function renderScannedProducts() {
+/* ---------- SHOW APP ---------- */
 
-    const result =
-        document.getElementById(
-            "scanResults"
-        );
+function showApp() {
 
+    const loginScreen = $("#loginScreen");
+    const app = $("#app");
 
-    if (!result) {
+    if (loginScreen) loginScreen.style.display = "none";
+    if (app) app.style.display = "block";
 
-        return;
-    }
-
-
-    result.innerHTML = `
-
-        <div class="form-card">
-
-            <h3>
-                Scanned Products
-            </h3>
-
-            <div
-                class="list-container"
-                style="margin-top:15px"
-            >
-
-                ${
-                    scannedProducts
-                        .map(
-                            item => `
-
-                                <div
-                                    class="product-item"
-                                >
-
-                                    <strong>
-                                        ${safe(
-                                            item.name
-                                        )}
-                                    </strong>
-
-                                    <small>
-                                        SKU:
-                                        ${safe(
-                                            item.sku
-                                        )}
-                                    </small>
-
-                                    <strong>
-                                        Qty:
-                                        ${item.quantity}
-                                    </strong>
-
-                                </div>
-
-                            `
-                        )
-                        .join("")
-                }
-
-            </div>
-
-
-            <button
-                class="primary-btn full"
-                style="margin-top:18px"
-                onclick="addScannedStock()"
-            >
-                ✓ Add Scanned Stock
-            </button>
-
-
-            <button
-                class="secondary-btn full"
-                onclick="startScanner()"
-            >
-                Scan More
-            </button>
-
-        </div>
-
-    `;
-}
-
-
-function addScannedStock() {
-
-    scannedProducts.forEach(
-        scanned => {
-
-            const product =
-                inventory.find(
-                    item =>
-                        item.id ===
-                        scanned.id
-                );
-
-
-            if (
-                product
-            ) {
-
-                product.quantity +=
-                    scanned.quantity;
-            }
-
-        }
-    );
-
-
-    saveProducts();
-
-    scannedProducts =
-        [];
-
-
-    updateAll();
-
-    renderScannedProducts();
-
-
-    alert(
-        "Scanned stock added successfully."
-    );
+    renderProducts();
+    updateDashboard();
 }
 
 
 /* =========================================================
-   AI SET MAKER
-========================================================= */
+   NAVIGATION
+   ========================================================= */
 
-function toggleDesign(
-    index,
-    button
-) {
+function initNavigation() {
 
-    if (
-        selectedDesigns
-            .includes(
-                index
-            )
-    ) {
+    $$("[data-page]").forEach(button => {
 
-        if (
-            selectedDesigns.length ===
-            1
-        ) {
+        button.addEventListener("click", function () {
 
+            const pageName = this.dataset.page;
+
+            $$("[data-page]").forEach(btn => {
+                btn.classList.remove("active");
+            });
+
+            this.classList.add("active");
+
+            $$(".page").forEach(page => {
+                page.style.display = "none";
+            });
+
+            const target = $("#" + pageName);
+
+            if (target) {
+                target.style.display = "block";
+            }
+
+            if (pageName === "inventory") {
+                renderProducts();
+            }
+
+            if (pageName === "dashboard") {
+                updateDashboard();
+            }
+
+            if (pageName === "billing") {
+                renderCart();
+            }
+        });
+    });
+}
+
+
+/* =========================================================
+   PRODUCT ADD
+   ========================================================= */
+
+function initProductForm() {
+
+    const form = $("#productForm");
+
+    if (!form) return;
+
+    form.addEventListener("submit", function (e) {
+
+        e.preventDefault();
+
+        const product = {
+            id: uid(),
+            sku: $("#sku")?.value.trim() || generateSKU(),
+            name: $("#productName")?.value.trim() || "",
+            category: $("#category")?.value.trim() || "",
+            brand: $("#brand")?.value.trim() || "",
+            color: $("#color")?.value.trim() || "",
+            size: $("#size")?.value.trim() || "",
+            purchasePrice: Number($("#purchasePrice")?.value || 0),
+            sellingPrice: Number($("#sellingPrice")?.value || 0),
+            quantity: Number($("#quantity")?.value || 0),
+            minStock: Number($("#minStock")?.value || 5),
+            image: "",
+            createdAt: new Date().toISOString()
+        };
+
+        if (!product.name) {
+            alert("Product name enter karo.");
             return;
         }
 
+        state.products.push(product);
 
-        selectedDesigns =
-            selectedDesigns.filter(
-                item =>
-                    item !==
-                    index
+        saveProducts();
+
+        form.reset();
+
+        alert("Product inventory mein add ho gaya.");
+
+        renderProducts();
+        updateDashboard();
+    });
+}
+
+
+/* ---------- SKU ---------- */
+
+function generateSKU() {
+    return "SKU-" + Date.now().toString().slice(-8);
+}
+
+
+/* =========================================================
+   INVENTORY DISPLAY
+   ========================================================= */
+
+function renderProducts(list = state.products) {
+
+    const container =
+        $("#productList") ||
+        $("#inventoryList") ||
+        $("#productsContainer");
+
+    if (!container) return;
+
+    if (list.length === 0) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Inventory Empty</h3>
+                <p>Abhi koi product add nahi hua.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = list.map(product => {
+
+        const lowStock =
+            Number(product.quantity) <= Number(product.minStock);
+
+        return `
+            <div class="product-card">
+
+                <div class="product-info">
+
+                    <h3>${escapeHTML(product.name)}</h3>
+
+                    <p>SKU: ${escapeHTML(product.sku)}</p>
+
+                    <p>
+                        ${escapeHTML(product.brand)}
+                        ${product.color ? " • " + escapeHTML(product.color) : ""}
+                        ${product.size ? " • Size " + escapeHTML(product.size) : ""}
+                    </p>
+
+                    <strong>${money(product.sellingPrice)}</strong>
+
+                    <p class="${lowStock ? "low-stock" : ""}">
+                        Stock: ${product.quantity}
+                    </p>
+
+                </div>
+
+                <div class="product-actions">
+
+                    <button onclick="addToCart('${product.id}')">
+                        Add to Bill
+                    </button>
+
+                    <button onclick="editProduct('${product.id}')">
+                        Edit
+                    </button>
+
+                    <button onclick="deleteProduct('${product.id}')">
+                        Delete
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+function initSearch() {
+
+    const search =
+        $("#searchInput") ||
+        $("#inventorySearch") ||
+        $("#search");
+
+    if (!search) return;
+
+    search.addEventListener("input", function () {
+
+        const query = this.value.toLowerCase().trim();
+
+        const filtered = state.products.filter(product => {
+
+            return (
+                String(product.name).toLowerCase().includes(query) ||
+                String(product.sku).toLowerCase().includes(query) ||
+                String(product.brand).toLowerCase().includes(query) ||
+                String(product.category).toLowerCase().includes(query) ||
+                String(product.color).toLowerCase().includes(query) ||
+                String(product.size).toLowerCase().includes(query)
             );
 
+        });
 
-        button.classList.remove(
-            "selected"
-        );
+        renderProducts(filtered);
+    });
+}
+
+
+/* =========================================================
+   DELETE PRODUCT
+   ========================================================= */
+
+window.deleteProduct = function (id) {
+
+    const product = state.products.find(p => p.id === id);
+
+    if (!product) return;
+
+    if (!confirm(`"${product.name}" delete karna hai?`)) {
+        return;
+    }
+
+    state.products =
+        state.products.filter(product => product.id !== id);
+
+    saveProducts();
+
+    renderProducts();
+    updateDashboard();
+};
+
+
+/* =========================================================
+   EDIT PRODUCT
+   ========================================================= */
+
+window.editProduct = function (id) {
+
+    const product = state.products.find(p => p.id === id);
+
+    if (!product) return;
+
+    const name = prompt("Product name:", product.name);
+
+    if (name === null) return;
+
+    const price = prompt(
+        "Selling price:",
+        product.sellingPrice
+    );
+
+    if (price === null) return;
+
+    const quantity = prompt(
+        "Quantity:",
+        product.quantity
+    );
+
+    if (quantity === null) return;
+
+    product.name = name.trim();
+    product.sellingPrice = Number(price);
+    product.quantity = Number(quantity);
+
+    saveProducts();
+
+    renderProducts();
+    updateDashboard();
+
+    alert("Product updated.");
+};
+
+
+/* =========================================================
+   BILLING
+   ========================================================= */
+
+window.addToCart = function (id) {
+
+    const product = state.products.find(p => p.id === id);
+
+    if (!product) return;
+
+    if (product.quantity <= 0) {
+        alert("Is product ka stock khatam hai.");
+        return;
+    }
+
+    const existing = state.cart.find(item => item.id === id);
+
+    if (existing) {
+
+        if (existing.qty >= product.quantity) {
+            alert("Available stock se zyada quantity nahi le sakte.");
+            return;
+        }
+
+        existing.qty++;
 
     } else {
 
-        if (
-            selectedDesigns.length >=
-            4
-        ) {
+        state.cart.push({
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: Number(product.sellingPrice),
+            qty: 1
+        });
+    }
+
+    renderCart();
+};
+
+
+/* ---------- REMOVE FROM CART ---------- */
+
+window.removeFromCart = function (id) {
+
+    state.cart =
+        state.cart.filter(item => item.id !== id);
+
+    renderCart();
+};
+
+
+/* ---------- CHANGE CART QUANTITY ---------- */
+
+window.changeCartQty = function (id, amount) {
+
+    const item = state.cart.find(i => i.id === id);
+
+    if (!item) return;
+
+    const product = state.products.find(p => p.id === id);
+
+    item.qty += amount;
+
+    if (item.qty <= 0) {
+        removeFromCart(id);
+        return;
+    }
+
+    if (product && item.qty > product.quantity) {
+        item.qty = product.quantity;
+        alert("Available stock se zyada quantity nahi hai.");
+    }
+
+    renderCart();
+};
+
+
+/* =========================================================
+   CART DISPLAY
+   ========================================================= */
+
+function renderCart() {
+
+    const container =
+        $("#cartItems") ||
+        $("#billingItems") ||
+        $("#cart");
+
+    if (!container) return;
+
+    if (state.cart.length === 0) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>Bill mein koi product nahi hai.</p>
+            </div>
+        `;
+
+        updateBillTotals();
+        return;
+    }
+
+    container.innerHTML = state.cart.map(item => {
+
+        const total = item.price * item.qty;
+
+        return `
+            <div class="cart-item">
+
+                <div>
+                    <strong>${escapeHTML(item.name)}</strong>
+                    <small>${escapeHTML(item.sku)}</small>
+                </div>
+
+                <div>
+                    <button onclick="changeCartQty('${item.id}', -1)">−</button>
+
+                    <span>${item.qty}</span>
+
+                    <button onclick="changeCartQty('${item.id}', 1)">+</button>
+                </div>
+
+                <strong>${money(total)}</strong>
+
+                <button onclick="removeFromCart('${item.id}')">
+                    Remove
+                </button>
+
+            </div>
+        `;
+
+    }).join("");
+
+    updateBillTotals();
+}
+
+
+/* =========================================================
+   DISCOUNT
+   ========================================================= */
+
+function initDiscount() {
+
+    const discountInput = $("#discount");
+
+    if (!discountInput) return;
+
+    discountInput.addEventListener("input", function () {
+
+        state.discount = Number(this.value || 0);
+
+        updateBillTotals();
+    });
+
+
+    const discountType = $("#discountType");
+
+    if (discountType) {
+
+        discountType.addEventListener("change", function () {
+
+            state.discountType = this.value;
+
+            updateBillTotals();
+        });
+    }
+}
+
+
+/* ---------- BILL TOTAL ---------- */
+
+function updateBillTotals() {
+
+    const subtotal =
+        state.cart.reduce(
+            (sum, item) => sum + item.price * item.qty,
+            0
+        );
+
+    let discountAmount = 0;
+
+    if (state.discountType === "amount") {
+
+        discountAmount =
+            Math.min(state.discount, subtotal);
+
+    } else {
+
+        discountAmount =
+            subtotal * (state.discount / 100);
+
+    }
+
+    const total =
+        Math.max(0, subtotal - discountAmount);
+
+    setText("#subtotal", money(subtotal));
+    setText("#discountAmount", money(discountAmount));
+    setText("#grandTotal", money(total));
+    setText("#total", money(total));
+}
+
+
+/* ---------- TEXT HELPER ---------- */
+
+function setText(selector, value) {
+
+    const element = $(selector);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+
+/* =========================================================
+   COMPLETE BILL
+   ========================================================= */
+
+function initCheckout() {
+
+    const button =
+        $("#checkoutBtn") ||
+        $("#completeBill") ||
+        $("#generateBill");
+
+    if (!button) return;
+
+    button.addEventListener("click", completeBill);
+}
+
+
+function completeBill() {
+
+    if (state.cart.length === 0) {
+        alert("Bill mein koi product nahi hai.");
+        return;
+    }
+
+    const subtotal =
+        state.cart.reduce(
+            (sum, item) => sum + item.price * item.qty,
+            0
+        );
+
+    let discountAmount = 0;
+
+    if (state.discountType === "amount") {
+        discountAmount = Math.min(
+            state.discount,
+            subtotal
+        );
+    } else {
+        discountAmount =
+            subtotal * state.discount / 100;
+    }
+
+    const total =
+        subtotal - discountAmount;
+
+    /* STOCK UPDATE */
+
+    state.cart.forEach(item => {
+
+        const product =
+            state.products.find(p => p.id === item.id);
+
+        if (product) {
+            product.quantity -= item.qty;
+
+            if (product.quantity < 0) {
+                product.quantity = 0;
+            }
+        }
+    });
+
+    saveProducts();
+
+    /* BILL */
+
+    const billNumber =
+        "BILL-" + Date.now().toString().slice(-8);
+
+    const bill = {
+        billNumber,
+        date: new Date().toLocaleString("en-IN"),
+        items: [...state.cart],
+        subtotal,
+        discount: discountAmount,
+        total
+    };
+
+    localStorage.setItem(
+        "last_bill",
+        JSON.stringify(bill)
+    );
+
+    alert(
+        `Bill Generated!\n\n` +
+        `Bill No: ${billNumber}\n` +
+        `Total: ${money(total)}`
+    );
+
+    state.cart = [];
+    state.discount = 0;
+
+    const discountInput = $("#discount");
+
+    if (discountInput) {
+        discountInput.value = "";
+    }
+
+    renderCart();
+    renderProducts();
+    updateDashboard();
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function updateDashboard() {
+
+    const totalProducts =
+        state.products.length;
+
+    const totalStock =
+        state.products.reduce(
+            (sum, p) => sum + Number(p.quantity || 0),
+            0
+        );
+
+    const lowStock =
+        state.products.filter(
+            p => Number(p.quantity) <= Number(p.minStock || 5)
+        ).length;
+
+    setText("#totalProducts", totalProducts);
+    setText("#totalStock", totalStock);
+    setText("#lowStock", lowStock);
+}
+
+
+/* =========================================================
+   BULK PRODUCT ADD
+   ========================================================= */
+
+function initBulkAdd() {
+
+    const fileInput =
+        $("#bulkFile") ||
+        $("#importFile");
+
+    if (!fileInput) return;
+
+    fileInput.addEventListener("change", function () {
+
+        const file = this.files[0];
+
+        if (!file) return;
+
+        const extension =
+            file.name.split(".").pop().toLowerCase();
+
+        if (extension === "csv") {
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+
+                importCSV(event.target.result);
+
+            };
+
+            reader.readAsText(file);
+
+        } else {
 
             alert(
-                "Maximum 4 designs."
+                "CSV file direct import supported hai. " +
+                "Excel ke liye XLSX library connect karni hogi."
+            );
+        }
+    });
+}
+
+
+/* ---------- CSV IMPORT ---------- */
+
+function importCSV(text) {
+
+    const rows = text
+        .split(/\r?\n/)
+        .map(row => row.trim())
+        .filter(Boolean);
+
+    if (rows.length < 2) {
+        alert("CSV mein data nahi mila.");
+        return;
+    }
+
+    const headers =
+        rows[0].split(",").map(h => h.trim().toLowerCase());
+
+    let added = 0;
+    let incomplete = 0;
+
+    for (let i = 1; i < rows.length; i++) {
+
+        const values =
+            rows[i].split(",").map(v => v.trim());
+
+        const data = {};
+
+        headers.forEach((header, index) => {
+            data[header] = values[index] || "";
+        });
+
+        const product = {
+            id: uid(),
+            sku: data.sku || generateSKU(),
+            name: data.name || data.productname || "",
+            category: data.category || "",
+            brand: data.brand || "",
+            color: data.color || "",
+            size: data.size || "",
+            purchasePrice: Number(
+                data.purchaseprice || data.purchase_price || 0
+            ),
+            sellingPrice: Number(
+                data.sellingprice || data.selling_price || 0
+            ),
+            quantity: Number(data.quantity || data.stock || 0),
+            minStock: Number(data.minstock || 5),
+            image: "",
+            createdAt: new Date().toISOString()
+        };
+
+        if (!product.name) {
+            incomplete++;
+            continue;
+        }
+
+        state.products.push(product);
+        added++;
+    }
+
+    saveProducts();
+
+    renderProducts();
+    updateDashboard();
+
+    alert(
+        `Import Complete!\n\n` +
+        `Added: ${added}\n` +
+        `Incomplete: ${incomplete}`
+    );
+}
+
+
+/* =========================================================
+   QR / SKU SCAN
+   ========================================================= */
+
+function initScanner() {
+
+    const scanButton =
+        $("#scanButton") ||
+        $("#startScanner") ||
+        $("#scanAdd");
+
+    if (!scanButton) return;
+
+    scanButton.addEventListener("click", startScanner);
+}
+
+
+async function startScanner() {
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+
+        alert(
+            "Camera access browser mein available nahi hai."
+        );
+
+        return;
+    }
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment"
+                }
+            });
+
+        const video =
+            $("#scannerVideo");
+
+        if (!video) {
+
+            stream.getTracks().forEach(
+                track => track.stop()
+            );
+
+            alert(
+                "Scanner video element HTML mein nahi mila."
             );
 
             return;
         }
 
-
-        selectedDesigns.push(
-            index
-        );
-
-
-        button.classList.add(
-            "selected"
-        );
-    }
-}
-
-
-async function analyzeSaree() {
-
-    if (
-        !selectedAIFile
-    ) {
+        video.srcObject = stream;
+        video.play();
 
         alert(
-            "Please upload a saree image first."
+            "Camera scanner start ho gaya. " +
+            "QR decoding ke liye QR library/API connect karni hogi."
         );
 
-        return;
-    }
+    } catch (error) {
 
+        console.error(error);
 
-    const result =
-        document.getElementById(
-            "setMakerResults"
+        alert(
+            "Camera permission allow karo."
         );
-
-
-    result.innerHTML = `
-
-        <div class="form-card">
-
-            <h3>
-                ✦ AI is analyzing...
-            </h3>
-
-            <p>
-                Detecting dominant colour and
-                searching inventory.
-            </p>
-
-        </div>
-
-    `;
-
-
-    try {
-
-        const colour =
-            await detectImageColour(
-                selectedAIFile
-            );
-
-
-        const matches =
-            findMatchingProducts(
-                colour
-            );
-
-
-        renderAIResult(
-            colour,
-            matches
-        );
-
-    }
-    catch (
-        error
-    ) {
-
-        console.error(
-            error
-        );
-
-
-        result.innerHTML = `
-
-            <div class="form-card">
-
-                <h3>
-                    Analysis failed
-                </h3>
-
-                <p>
-                    Please try another image.
-                </p>
-
-            </div>
-
-        `;
     }
 }
 
 
-function detectImageColour(
-    file
-) {
+/* =========================================================
+   AI COLOR / SAREE MATCH
+   ========================================================= */
 
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
+function initAISetMaking() {
 
-            const image =
-                new Image();
+    const button =
+        $("#aiSetMaking") ||
+        $("#aiScan") ||
+        $("#aiMatch");
 
+    if (!button) return;
 
-            const url =
-                URL.createObjectURL(
-                    file
-                );
+    button.addEventListener("click", function () {
 
+        alert(
+            "AI Set Making selected.\n\n" +
+            "Image scan karke saree ka color detect hoga " +
+            "aur inventory ke matching products search honge."
+        );
 
-            image.onload =
-                () => {
+        const input =
+            $("#aiImage") ||
+            $("#sareeImage");
 
-                    const canvas =
-                        document.createElement(
-                            "canvas"
-                        );
-
-
-                    const size =
-                        120;
-
-
-                    canvas.width =
-                        size;
-
-                    canvas.height =
-                        size;
-
-
-                    const ctx =
-                        canvas.getContext(
-                            "2d"
-                        );
-
-
-                    ctx.drawImage(
-                        image,
-                        0,
-                        0,
-                        size,
-                        size
-                    );
-
-
-                    const data =
-                        ctx.getImageData(
-                            0,
-                            0,
-                            size,
-                            size
-                        ).data;
-
-
-                    let r = 0;
-
-                    let g = 0;
-
-                    let b = 0;
-
-                    let count = 0;
-
-
-                    for (
-                        let i = 0;
-                        i < data.length;
-                        i += 16
-                    ) {
-
-                        const red =
-                            data[i];
-
-                        const green =
-                            data[i + 1];
-
-                        const blue =
-                            data[i + 2];
-
-                        const alpha =
-                            data[i + 3];
-
-
-                        if (
-                            alpha < 100
-                        ) {
-
-                            continue;
-                        }
-
-
-                        const brightness =
-                            (
-                                red +
-                                green +
-                                blue
-                            ) / 3;
-
-
-                        if (
-                            brightness >
-                            245 ||
-                            brightness <
-                            15
-                        ) {
-
-                            continue;
-                        }
-
-
-                        r += red;
-
-                        g += green;
-
-                        b += blue;
-
-                        count++;
-                    }
-
-
-                    URL.revokeObjectURL(
-                        url
-                    );
-
-
-                    if (
-                        !count
-                    ) {
-
-                        resolve({
-                            r: 128,
-                            g: 128,
-                            b: 128,
-                            name: "Mixed"
-                        });
-
-                        return;
-                    }
-
-
-                    r =
-                        Math.round(
-                            r / count
-                        );
-
-                    g =
-                        Math.round(
-                            g / count
-                        );
-
-                    b =
-                        Math.round(
-                            b / count
-                        );
-
-
-                    resolve({
-
-                        r,
-
-                        g,
-
-                        b,
-
-                        name:
-                            colourName(
-                                r,
-                                g,
-                                b
-                            )
-
-                    });
-
-                };
-
-
-            image.onerror =
-                reject;
-
-
-            image.src =
-                url;
-
+        if (input) {
+            input.click();
         }
-    );
+    });
 }
 
 
-function colourName(
-    r,
-    g,
-    b
-) {
+/* ---------- COLOR MATCH ---------- */
 
-    const max =
-        Math.max(
-            r,
-            g,
-            b
+function findColorMatches(color) {
+
+    if (!color) return [];
+
+    const query =
+        color.toLowerCase().trim();
+
+    return state.products.filter(product => {
+
+        const productColor =
+            String(product.color || "").toLowerCase();
+
+        return (
+            productColor.includes(query) ||
+            query.includes(productColor)
         );
-
-
-    const min =
-        Math.min(
-            r,
-            g,
-            b
-        );
-
-
-    if (
-        max < 45
-    ) {
-
-        return "Black";
-    }
-
-
-    if (
-        min > 215
-    ) {
-
-        return "White";
-    }
-
-
-    if (
-        r > 170 &&
-        g < 100 &&
-        b < 110
-    ) {
-
-        return "Red";
-    }
-
-
-    if (
-        r > 180 &&
-        g > 120 &&
-        b < 100
-    ) {
-
-        return "Orange";
-    }
-
-
-    if (
-        r > 175 &&
-        g > 155 &&
-        b < 120
-    ) {
-
-        return "Yellow";
-    }
-
-
-    if (
-        g > r * 1.15 &&
-        g > b * 1.1
-    ) {
-
-        return "Green";
-    }
-
-
-    if (
-        b > r * 1.2 &&
-        b > g * 1.05
-    ) {
-
-        return "Blue";
-    }
-
-
-    if (
-        r > 120 &&
-        b > 100 &&
-        r > g * 1.15
-    ) {
-
-        return "Purple";
-    }
-
-
-    if (
-        r > 130 &&
-        b > 100 &&
-        Math.abs(
-            r - b
-        ) < 70
-    ) {
-
-        return "Pink";
-    }
-
-
-    if (
-        r > g &&
-        g > b
-    ) {
-
-        return "Brown";
-    }
-
-
-    return "Mixed";
+    });
 }
 
 
-function findMatchingProducts(
-    detected
-) {
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
 
-    if (
-        !inventory.length
-    ) {
+function initImagePreview() {
 
-        return [];
-    }
+    $$("input[type='file']").forEach(input => {
 
+        input.addEventListener("change", function () {
 
-    const target =
-        detected.name
-            .toLowerCase();
+            const file = this.files[0];
 
+            if (!file || !file.type.startsWith("image/")) {
+                return;
+            }
 
-    const aliases = {
+            const reader = new FileReader();
 
-        red: [
-            "red",
-            "maroon",
-            "wine",
-            "burgundy",
-            "rani",
-            "lal"
-        ],
+            reader.onload = function (event) {
 
-        blue: [
-            "blue",
-            "navy",
-            "royal",
-            "sky",
-            "neela",
-            "nili"
-        ],
+                const previewId =
+                    input.dataset.preview;
 
-        green: [
-            "green",
-            "olive",
-            "mint",
-            "pista",
-            "hara"
-        ],
+                if (!previewId) return;
 
-        purple: [
-            "purple",
-            "violet",
-            "lavender",
-            "baingani"
-        ],
+                const preview =
+                    $("#" + previewId);
 
-        pink: [
-            "pink",
-            "rose",
-            "rani",
-            "gulabi"
-        ],
-
-        yellow: [
-            "yellow",
-            "mustard",
-            "haldi",
-            "peela"
-        ],
-
-        orange: [
-            "orange",
-            "peach",
-            "kesariya"
-        ],
-
-        brown: [
-            "brown",
-            "coffee",
-            "chocolate",
-            "bhura"
-        ],
-
-        black: [
-            "black",
-            "kala"
-        ],
-
-        white: [
-            "white",
-            "cream",
-            "ivory",
-            "safed"
-        ]
-
-    };
-
-
-    const words =
-        aliases[
-            target
-        ] || [];
-
-
-    const scored =
-        inventory
-            .map(
-                product => {
-
-                    const text =
-                        (
-                            String(
-                                product.colour ||
-                                ""
-                            ) +
-                            " " +
-                            String(
-                                product.name ||
-                                ""
-                            ) +
-                            " " +
-                            String(
-                                product.category ||
-                                ""
-                            )
-                        )
-                            .toLowerCase();
-
-
-                    let score =
-                        0;
-
-
-                    if (
-                        text.includes(
-                            target
-                        )
-                    ) {
-
-                        score +=
-                            100;
-                    }
-
-
-                    words.forEach(
-                        word => {
-
-                            if (
-                                text.includes(
-                                    word
-                                )
-                            ) {
-
-                                score +=
-                                    20;
-                            }
-
-                        }
-                    );
-
-
-                    if (
-                        Number(
-                            product.quantity
-                        ) > 0
-                    ) {
-
-                        score +=
-                            10;
-                    }
-
-
-                    return {
-                        product,
-                        score
-                    };
-
+                if (preview) {
+                    preview.src =
+                        event.target.result;
+                    preview.style.display = "block";
                 }
-            )
-            .filter(
-                item =>
-                    item.score >
-                    0
-            )
-            .sort(
-                (
-                    a,
-                    b
-                ) =>
-                    b.score -
-                    a.score
-            );
+            };
 
-
-    return scored
-        .map(
-            item =>
-                item.product
-        )
-        .slice(
-            0,
-            20
-        );
-}
-
-
-function renderAIResult(
-    colour,
-    matches
-) {
-
-    const result =
-        document.getElementById(
-            "setMakerResults"
-        );
-
-
-    result.innerHTML = `
-
-        <div class="form-card">
-
-            <h3>
-                ✦ AI Match Result
-            </h3>
-
-
-            <div
-                style="
-                    display:flex;
-                    align-items:center;
-                    gap:15px;
-                    margin:18px 0;
-                "
-            >
-
-                <div
-                    style="
-                        width:60px;
-                        height:60px;
-                        border-radius:18px;
-                        background:rgb(
-                            ${colour.r},
-                            ${colour.g},
-                            ${colour.b}
-                        );
-                        border:3px solid white;
-                        box-shadow:
-                            0 5px 15px
-                            rgba(0,0,0,.15);
-                    "
-                ></div>
-
-
-                <div>
-
-                    <small
-                        style="color:#777"
-                    >
-                        Detected Colour
-                    </small>
-
-                    <strong
-                        style="
-                            display:block;
-                            font-size:20px;
-                        "
-                    >
-                        ${safe(
-                            colour.name
-                        )}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div
-                class="section-title"
-            >
-
-                <h3>
-                    Closest Inventory
-                </h3>
-
-                <span>
-                    ${matches.length}
-                    matches
-                </span>
-
-            </div>
-
-
-            ${
-                matches.length
-                    ? matches
-                        .map(
-                            product =>
-                                productHTML(
-                                    product
-                                )
-                        )
-                        .join("")
-                    : `
-                        <div
-                            class="empty-state"
-                        >
-
-                            <div>
-                                🔍
-                            </div>
-
-                            <h3>
-                                No colour match
-                            </h3>
-
-                            <p>
-                                Add more colour
-                                variants to
-                                inventory.
-                            </p>
-
-                        </div>
-                    `
-            }
-
-        </div>
-
-    `;
+            reader.readAsDataURL(file);
+        });
+    });
 }
 
 
 /* =========================================================
-   BILL
-========================================================= */
+   LOGOUT
+   ========================================================= */
 
-function updateBillProducts() {
+function initLogout() {
 
-    const select =
-        document.getElementById(
-            "billProduct"
-        );
+    const button = $("#logout");
 
+    if (!button) return;
 
-    if (!select) {
+    button.addEventListener("click", function () {
 
-        return;
-    }
-
-
-    const current =
-        select.value;
-
-
-    select.innerHTML = `
-
-        <option value="">
-            Select product
-        </option>
-
-        ${
-            inventory
-                .map(
-                    product => `
-
-                        <option
-                            value="${product.id}"
-                        >
-                            ${safe(
-                                product.name
-                            )}
-                            —
-                            ₹${money(
-                                product.sellingPrice
-                            )}
-                            —
-                            Stock:
-                            ${product.quantity}
-                        </option>
-
-                    `
-                )
-                .join("")
+        if (!confirm("Logout karna hai?")) {
+            return;
         }
 
-    `;
+        state.currentUser = null;
 
-
-    if (
-        inventory.some(
-            product =>
-                product.id ===
-                current
-        )
-    ) {
-
-        select.value =
-            current;
-    }
-}
-
-
-function calculateBillPreview() {
-
-    const productId =
-        document.getElementById(
-            "billProduct"
-        )
-        ?.value;
-
-
-    const quantity =
-        Number(
-            document.getElementById(
-                "billQuantity"
-            )
-            ?.value
-        ) || 0;
-
-
-    const discount =
-        Number(
-            document.getElementById(
-                "billDiscount"
-            )
-            ?.value
-        ) || 0;
-
-
-    const preview =
-        document.getElementById(
-            "billCalculation"
+        localStorage.removeItem(
+            "inventory_user"
         );
 
-
-    if (!preview) {
-
-        return;
-    }
-
-
-    const product =
-        inventory.find(
-            p =>
-                p.id ===
-                productId
-        );
-
-
-    if (
-        !product ||
-        quantity <= 0
-    ) {
-
-        preview.innerHTML =
-            "Select product and quantity.";
-
-        return;
-    }
-
-
-    const subtotal =
-        Number(
-            product.sellingPrice
-        ) *
-        quantity;
-
-
-    const safeDiscount =
-        Math.min(
-            Math.max(
-                discount,
-                0
-            ),
-            subtotal
-        );
-
-
-    const total =
-        subtotal -
-        safeDiscount;
-
-
-    preview.innerHTML = `
-
-        <div>
-            <span>Subtotal</span>
-            <strong>
-                ₹${money(
-                    subtotal
-                )}
-            </strong>
-        </div>
-
-        <div>
-            <span>Discount</span>
-            <strong>
-                - ₹${money(
-                    safeDiscount
-                )}
-            </strong>
-        </div>
-
-        <hr>
-
-        <div>
-            <strong>
-                Total
-            </strong>
-
-            <strong>
-                ₹${money(
-                    total
-                )}
-            </strong>
-        </div>
-
-    `;
-}
-
-
-function createBill() {
-
-    const productId =
-        document.getElementById(
-            "billProduct"
-        )?.value;
-
-
-    const quantity =
-        Number(
-            document.getElementById(
-                "billQuantity"
-            )?.value
-        ) || 0;
-
-
-    const discount =
-        Number(
-            document.getElementById(
-                "billDiscount"
-            )?.value
-        ) || 0;
-
-
-    const customer =
-        document.getElementById(
-            "customerName"
-        )
-        ?.value
-        .trim() ||
-        "Walk-in Customer";
-
-
-    const product =
-        inventory.find(
-            p =>
-                p.id ===
-                productId
-        );
-
-
-    if (!product) {
-
-        alert(
-            "Please select a product."
-        );
-
-        return;
-    }
-
-
-    if (
-        quantity <= 0
-    ) {
-
-        alert(
-            "Quantity must be at least 1."
-        );
-
-        return;
-    }
-
-
-    if (
-        quantity >
-        Number(
-            product.quantity
-        )
-    ) {
-
-        alert(
-            "Not enough stock available."
-        );
-
-        return;
-    }
-
-
-    const subtotal =
-        Number(
-            product.sellingPrice
-        ) *
-        quantity;
-
-
-    const safeDiscount =
-        Math.min(
-            Math.max(
-                discount,
-                0
-            ),
-            subtotal
-        );
-
-
-    const total =
-        subtotal -
-        safeDiscount;
-
-
-    const billNumber =
-        "SI-" +
-        Date.now()
-            .toString()
-            .slice(
-                -8
-            );
-
-
-    const sale = {
-
-        id:
-            Date.now().toString(),
-
-        billNumber,
-
-        customer,
-
-        productId,
-
-        productName:
-            product.name,
-
-        sku:
-            product.sku,
-
-        quantity,
-
-        price:
-            Number(
-                product.sellingPrice
-            ),
-
-        subtotal,
-
-        discount:
-            safeDiscount,
-
-        total,
-
-        date:
-            new Date()
-                .toISOString()
-
-    };
-
-
-    product.quantity -=
-        quantity;
-
-
-    sales.push(
-        sale
-    );
-
-
-    localStorage.setItem(
-        STORAGE_SALES,
-        JSON.stringify(
-            sales
-        )
-    );
-
-
-    saveProducts();
-
-    updateAll();
-
-    renderBill(
-        sale
-    );
-
-
-    alert(
-        "Bill created successfully.\nStock deducted automatically."
-    );
-}
-
-
-function renderBill(
-    sale
-) {
-
-    const preview =
-        document.getElementById(
-            "billPreview"
-        );
-
-
-    if (!preview) {
-
-        return;
-    }
-
-
-    preview.innerHTML = `
-
-        <div class="bill-preview">
-
-            <div class="bill-header">
-
-                <div
-                    class="brand-logo"
-                    style="
-                        margin:auto;
-                    "
-                >
-                    SI
-                </div>
-
-                <h2>
-                    Smart Inventory
-                </h2>
-
-                <p>
-                    Sale Bill / Parcha
-                </p>
-
-                <small>
-                    Bill No:
-                    ${safe(
-                        sale.billNumber
-                    )}
-                </small>
-
-            </div>
-
-
-            <hr>
-
-
-            <p>
-                <strong>
-                    Customer:
-                </strong>
-
-                ${safe(
-                    sale.customer
-                )}
-            </p>
-
-
-            <p>
-                <strong>
-                    Product:
-                </strong>
-
-                ${safe(
-                    sale.productName
-                )}
-            </p>
-
-
-            <p>
-                <strong>
-                    SKU:
-                </strong>
-
-                ${safe(
-                    sale.sku
-                )}
-            </p>
-
-
-            <p>
-                <strong>
-                    Quantity:
-                </strong>
-
-                ${sale.quantity}
-            </p>
-
-
-            <p>
-                <strong>
-                    Price:
-                </strong>
-
-                ₹${money(
-                    sale.price
-                )}
-            </p>
-
-
-            <hr>
-
-
-            <p>
-                Subtotal:
-                ₹${money(
-                    sale.subtotal
-                )}
-            </p>
-
-
-            <p>
-                Discount:
-                - ₹${money(
-                    sale.discount
-                )}
-            </p>
-
-
-            <h2>
-                Total:
-                ₹${money(
-                    sale.total
-                )}
-            </h2>
-
-
-            <button
-                class="primary-btn full"
-                onclick="window.print()"
-            >
-                🖨️ Print Bill
-            </button>
-
-        </div>
-
-    `;
+        location.reload();
+    });
 }
 
 
 /* =========================================================
-   EXPORT
-========================================================= */
+   APP INITIALIZATION
+   ========================================================= */
 
-function exportInventory() {
+document.addEventListener("DOMContentLoaded", function () {
 
-    if (
-        !inventory.length
-    ) {
+    initLogin();
+    initNavigation();
+    initProductForm();
+    initSearch();
+    initDiscount();
+    initCheckout();
+    initBulkAdd();
+    initScanner();
+    initAISetMaking();
+    initImagePreview();
+    initLogout();
 
-        alert(
-            "Inventory is empty."
-        );
+    if (state.currentUser) {
+        showApp();
+    } else {
 
-        return;
+        const app = $("#app");
+
+        if (app) {
+            app.style.display = "none";
+        }
     }
 
-
-    const headers = [
-
-        "Product Name",
-        "SKU",
-        "Category",
-        "Colour",
-        "Size",
-        "Quantity",
-        "Purchase Price",
-        "Selling Price",
-        "Notes"
-
-    ];
-
-
-    const rows =
-        inventory.map(
-            product => [
-
-                product.name,
-
-                product.sku,
-
-                product.category,
-
-                product.colour,
-
-                product.size,
-
-                product.quantity,
-
-                product.purchasePrice,
-
-                product.sellingPrice,
-
-                product.notes
-
-            ]
-        );
-
-
-    const csv =
-        [
-            headers,
-            ...rows
-        ]
-            .map(
-                row =>
-                    row
-                        .map(
-                            cell =>
-                                `"${String(
-                                    cell ??
-                                    ""
-                                )
-                                .replace(
-                                    /"/g,
-                                    '""'
-                                )}"`
-                        )
-                        .join(",")
-            )
-            .join("\n");
-
-
-    const blob =
-        new Blob(
-            [csv],
-            {
-                type:
-                    "text/csv;charset=utf-8;"
-            }
-        );
-
-
-    const url =
-        URL.createObjectURL(
-            blob
-        );
-
-
-    const a =
-        document.createElement(
-            "a"
-        );
-
-
-    a.href =
-        url;
-
-
-    a.download =
-        "smart-inventory-backup.csv";
-
-
-    a.click();
-
-
-    URL.revokeObjectURL(
-        url
-    );
-}
-
-
-/* =========================================================
-   GLOBAL UPDATE
-========================================================= */
-
-function updateAll() {
-
+    renderProducts();
+    renderCart();
     updateDashboard();
 
-    renderInventory(
-        inventory
+    console.log(
+        "Smart Inventory App initialized successfully."
     );
-
-    renderLowStock();
-
-    updateBillProducts();
-
-    calculateBillPreview();
-}
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function money(
-    value
-) {
-
-    return Number(
-        value || 0
-    ).toFixed(2);
-}
-
-
-function safe(
-    value
-) {
-
-    return String(
-        value ??
-        ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-}
-
-
-/* =========================================================
-   GLOBAL EXPORTS
-========================================================= */
-
-window.showLogin =
-    showLogin;
-
-window.showApp =
-    showApp;
-
-window.sendOTP =
-    sendOTP;
-
-window.verifyOTP =
-    verifyOTP;
-
-window.backToMobile =
-    backToMobile;
-
-window.loginWithGmail =
-    loginWithGmail;
-
-window.logout =
-    logout;
-
-window.openProfile =
-    openProfile;
-
-window.openPage =
-    openPage;
-
-window.addProduct =
-    addProduct;
-
-window.searchInventory =
-    searchInventory;
-
-window.filterInventory =
-    filterInventory;
-
-window.editStock =
-    editStock;
-
-window.deleteProduct =
-    deleteProduct;
-
-window.addImportedProducts =
-    addImportedProducts;
-
-window.startScanner =
-    startScanner;
-
-window.stopScanner =
-    stopScanner;
-
-window.addScannedStock =
-    addScannedStock;
-
-window.analyzeSaree =
-    analyzeSaree;
-
-window.calculateBillPreview =
-    calculateBillPreview;
-
-window.createBill =
-    createBill;
-
-window.exportInventory =
-    exportInventory;
+});
